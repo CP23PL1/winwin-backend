@@ -1,0 +1,43 @@
+version: '3'
+
+services:
+  app:
+    build:
+      context: ./app
+    ports:
+      - '8080:8080'
+    networks:
+      - winwin-backend-network
+    restart: on-failure
+    depends_on:
+      - postgres
+      - redis
+
+  postgres:
+    image: postgres:latest
+    ports:
+      - '5432:5432'
+    env_file:
+      - .env
+    restart: on-failure
+    networks:
+      - winwin-backend-network
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:latest
+    restart: on-failure
+    env_file:
+      - .env
+    networks:
+      - winwin-backend-network
+    volumes:
+      - redis-data:/data
+
+networks:
+  winwin-backend-network:
+
+volumes:
+  postgres-data:
+  redis-data:
