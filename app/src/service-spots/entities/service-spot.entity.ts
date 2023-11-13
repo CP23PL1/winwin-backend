@@ -20,10 +20,12 @@ export class ServiceSpot {
   @Index({ spatial: true })
   coords: Point;
 
-  @Column()
+  @Column({ unique: true })
   placeId: string;
 
-  @Column()
+  @Column({
+    default: false,
+  })
   approved: boolean;
 
   @CreateDateColumn()

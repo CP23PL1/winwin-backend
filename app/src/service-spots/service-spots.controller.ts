@@ -6,9 +6,10 @@ import {
   Param,
   Delete,
   Body,
-  HttpException,
   Query,
   ParseIntPipe,
+  ParseFloatPipe,
+  NotFoundException,
 } from '@nestjs/common';
 import { ServiceSpotsService } from './service-spots.service';
 import { CreateServiceSpot } from './dto/create-service-spot.dto';
@@ -26,30 +27,25 @@ export class ServiceSpotsController {
   })
   @Post()
   create(@Body() data: CreateServiceSpot) {
-    if (!data) {
-      throw new HttpException('No data provided', 400);
-    }
-    console.log(data);
-
     return this.serviceSpotsService.create(data);
   }
 
   @Get()
   findAll(
-    @Query('lat') lat?: number,
-    @Query('lng') lng?: number,
-    @Query('radius') radius?: number,
+    @Query('lat', ParseFloatPipe) lat?: number,
+    @Query('lng', ParseFloatPipe) lng?: number,
+    @Query('radius', ParseIntPipe) radius?: number,
   ) {
-    if (lat && lng && radius) {
-      return this.serviceSpotsService.findAllByDistance(lat, lng, radius);
-    }
-
-    return this.serviceSpotsService.findAll();
+    return this.serviceSpotsService.findAllByDistance(lat, lng, radius);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.serviceSpotsService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const serviceSpot = await this.serviceSpotsService.findOne(id);
+    if (!serviceSpot) {
+      throw new NotFoundException(`Service Spot #${id} not found`);
+    }
+    return serviceSpot;
   }
 
   @Patch(':id')

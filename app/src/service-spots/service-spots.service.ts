@@ -11,22 +11,23 @@ export class ServiceSpotsService {
     @InjectRepository(ServiceSpot)
     private readonly serviceSpotRepo: Repository<ServiceSpot>,
   ) {}
-  create(data: CreateServiceSpot) {
-    return this.serviceSpotRepo.save(data);
+  async create(data: CreateServiceSpot) {
+    console.log(data);
+    const newServiceSpot = await this.serviceSpotRepo.save(data);
+    console.log(newServiceSpot);
+    return newServiceSpot;
   }
 
   findAll() {
-    return this.serviceSpotRepo;
+    return this.serviceSpotRepo.find();
   }
 
   async findAllByDistance(lat: number, lng: number, radius: number) {
     const result = await this.serviceSpotRepo
       .createQueryBuilder('serviceSpot')
-      .addSelect(
-        'ST_Distance(serviceSpot.location, ST_MakePoint(:lng, :lat)::geography)',
-        'distance',
-      )
-      .where('ST_DWithin(serviceSpot.location, ST_MakePoint(:lng, :lat)::geography, :radius)', {
+      .addSelect('ST_Distance(serviceSpot.coords, ST_MakePoint(:lng, :lat)::geography)', 'distance')
+      .where('ST_DWithin(serviceSpot.coords, ST_MakePoint(:lng, :lat)::geography, :radius)')
+      .setParameters({
         lat,
         lng,
         radius,

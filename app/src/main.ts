@@ -4,11 +4,17 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { GlobalExceptionFilter } from './filters/exceptions/global-exception.filter';
 
 const API_VERSION = 'v1';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule,
+    new FastifyAdapter({
+      logger: true,
+    }),
+  );
   // App settings
   app.setGlobalPrefix(API_VERSION);
   app.useGlobalPipes(
@@ -16,6 +22,7 @@ async function bootstrap() {
       transform: true,
     }),
   );
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // API Documentation
   const documentBuilder = new DocumentBuilder()

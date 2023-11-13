@@ -7,9 +7,15 @@ export class CreateServiceSpot {
   @ApiProperty({
     example: 'Service Spot 1',
   })
+  @Transform(({ value }) => value.trim())
   @IsNotEmpty()
   name: string;
 
+  @ApiProperty({
+    example: 'ChIJ0wZrj0K3lzMRQOYHfT8WV5k',
+    description: 'Google Place ID',
+  })
+  @Transform(({ value }) => value.trim())
   @IsNotEmpty()
   placeId: string;
 
@@ -20,9 +26,12 @@ export class CreateServiceSpot {
       lng: 123.123,
     },
   })
-  @Transform(({ value }) => ({
-    type: 'Point',
-    coordinates: [value.lng, value.lat],
-  }))
-  location: Point;
+  @Transform(
+    ({ value }) => ({
+      type: 'Point',
+      coordinates: [value.lng, value.lat],
+    }),
+    { toClassOnly: true },
+  )
+  coords: Point;
 }
