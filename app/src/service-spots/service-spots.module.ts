@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ServiceSpotsService } from './service-spots.service';
 import { ServiceSpotsController } from './service-spots.controller';
-import { PrismaModule } from 'src/prisma/prisma.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ServiceSpot } from './entities/service-spot.entity';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [TypeOrmModule.forFeature([ServiceSpot])],
   controllers: [ServiceSpotsController],
   providers: [ServiceSpotsService],
 })

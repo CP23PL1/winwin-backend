@@ -3,18 +3,30 @@ import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
+
+const API_VERSION = 'v1';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+  // App settings
+  app.setGlobalPrefix(API_VERSION);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+    }),
+  );
 
+  // API Documentation
   const documentBuilder = new DocumentBuilder()
     .setTitle('WinWin API Documentation')
     .setDescription('An application for Motorcycle Taxi')
-    .setVersion('1.0')
+    .setVersion(API_VERSION)
     .build();
   const document = SwaggerModule.createDocument(app, documentBuilder);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup(API_VERSION, app, document);
 
+  // Server Configurations
   const configService = app.get(ConfigService);
   const HOST = configService.get<string>('HOST') || '0.0.0.0';
   const PORT = configService.get<number>('PORT') || 3000;
