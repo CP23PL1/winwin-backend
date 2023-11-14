@@ -4,6 +4,7 @@ import { UpdateServiceSpot } from './dto/update-service-spot.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ServiceSpot } from './entities/service-spot.entity';
 import { Repository } from 'typeorm';
+import { ServiceSpotDto } from './dto/service-spot.dto';
 
 @Injectable()
 export class ServiceSpotsService {
@@ -12,9 +13,7 @@ export class ServiceSpotsService {
     private readonly serviceSpotRepo: Repository<ServiceSpot>,
   ) {}
   async create(data: CreateServiceSpot) {
-    console.log(data);
     const newServiceSpot = await this.serviceSpotRepo.save(data);
-    console.log(newServiceSpot);
     return newServiceSpot;
   }
 
@@ -35,7 +34,7 @@ export class ServiceSpotsService {
       .orderBy('distance', 'ASC')
       .getRawMany<ServiceSpot>();
     const formattedResult = JSON.stringify(result ?? []).replace(/serviceSpot_/g, '');
-    return JSON.parse(formattedResult) as ServiceSpot[];
+    return JSON.parse(formattedResult) as ServiceSpotDto[];
   }
 
   findOne(id: number) {

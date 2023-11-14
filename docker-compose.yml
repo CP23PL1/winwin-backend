@@ -2,16 +2,24 @@ version: '3'
 
 services:
   app:
+    container_name: winwin-api
+    image: winwin-api
     build:
       context: ./app
+      target: development
     ports:
       - '8080:8080'
-    networks:
-      - winwin-backend-network
-    restart: on-failure
+    restart: unless-stopped
     depends_on:
       - postgres
       - redis
+    networks:
+      - app
+    working_dir: /app
+    volumes:
+      - ./app:/app:delegated
+      - ./app/node_modules:/app/node_modules
+    command: yarn start:dev
 
   postgres:
     image: postgis/postgis:16-3.4-alpine
@@ -21,7 +29,7 @@ services:
       - .env
     restart: on-failure
     networks:
-      - winwin-backend-network
+      - app
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -32,12 +40,12 @@ services:
     env_file:
       - .env
     networks:
-      - winwin-backend-network
+      - app
     volumes:
       - redis-data:/data
 
 networks:
-  winwin-backend-network:
+  app:
 
 volumes:
   postgres-data:

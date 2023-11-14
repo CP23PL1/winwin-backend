@@ -5,7 +5,7 @@ import { validate as envValidation } from './config/env.validation';
 import { ServiceSpotsModule } from './service-spots/service-spots.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { dataSourceOptions } from './data-source';
+import { dataSourceOptions } from './db/data-source';
 
 @Module({
   imports: [
