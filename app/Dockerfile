@@ -18,7 +18,6 @@ FROM node:lts-alpine as production
 ENV NODE_ENV=production
 COPY --chown=node:node --from=production-build /app/dist /app/dist
 COPY --chown=node:node --from=production-build /app/node_modules /app/node_modules
-COPY --chown=node:node --from=production-build /app/.env /app/.env
 
 WORKDIR /app
 ENTRYPOINT [ "node", "dist/main.js" ]
