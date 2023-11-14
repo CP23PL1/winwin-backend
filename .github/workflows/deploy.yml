@@ -1,10 +1,11 @@
 name: Deploy on Self-hosted
 
 on:
-  push:
-    branches: ['main']
-  pull_request: 
-    branches: ['main']
+  workflow_run:
+    workflows: ["Docker Image CI"]
+    branches: ["main"]
+    types: 
+      - completed
 
 jobs:
   build:
@@ -13,21 +14,20 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository }}
 
-      - name: Pull image
-        run: docker pull ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.tags.latest }}
+      - name: Login to Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run image
-        run: docker run --network=winwin-backend_app -d ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.tags.latest }}
+      - name: Pull and Run image
+        run: |
+          docker pull ghcr.io/${{ github.repository }}:main
+          docker run --network=winwin-backend_app -d ghcr.io/${{ github.repository }}:main
