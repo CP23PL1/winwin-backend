@@ -2,7 +2,7 @@
 FROM node:lts-alpine as builder
 WORKDIR /app
 COPY . .
-RUN yarn --frozen-lockfile
+RUN yarn install --frozen-lockfile
 
 # DEVELOPMENT
 FROM builder as development
