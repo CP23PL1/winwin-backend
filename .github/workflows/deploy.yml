@@ -8,6 +8,7 @@ on:
       - completed
 
 env:
+  CONTAINER_NAME: winwin-api
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -35,7 +36,8 @@ jobs:
         run: |
           docker pull ${{steps.meta.outputs.tags}}
           docker run -d \
+            --name ${{env.CONTAINER_NAME}} \
             -p 8080:8080 \
             --net winwin \
-            -- restart=always \
+            --restart=always \
           ${{steps.meta.outputs.tags}}
