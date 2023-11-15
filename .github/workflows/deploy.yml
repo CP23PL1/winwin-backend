@@ -32,7 +32,25 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Pull image from ${{ env.REGISTRY }}
+      - name: Stop container
+        run: |
+          docker stop ${{env.CONTAINER_NAME}} || true
+          docker rm ${{env.CONTAINER_NAME}} || true
+
+      - name: Remove image
+        run: |
+          docker rmi ${{steps.meta.outputs.tags}} || true
+
+      - name: Setup Environment File
+        run: |
+          touch .env
+          echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+
+      - name: Pull image and Run image from ${{ env.REGISTRY }}
         run: |
           docker pull ${{steps.meta.outputs.tags}}
           docker run -d \
@@ -40,4 +58,5 @@ jobs:
             -p 8080:8080 \
             --net winwin \
             --restart=always \
+            --env-file .env \
           ${{steps.meta.outputs.tags}}
