@@ -34,4 +34,8 @@ jobs:
       - name: Pull image from ${{ env.REGISTRY }}
         run: |
           docker pull ${{steps.meta.outputs.tags}}
-          docker run --name ${{ env.IMAGE_NAME }} -d ${{steps.meta.outputs.tags}}
+          docker run -d \
+            -p 8080:8080 \
+            --net winwin \
+            -- restart=always \
+          ${{steps.meta.outputs.tags}}
