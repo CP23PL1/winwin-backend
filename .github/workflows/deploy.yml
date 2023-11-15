@@ -14,12 +14,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-
       - name: Login to Container registry
         uses: docker/login-action@v3
         with:
@@ -27,7 +21,5 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull and Run image
-        run: |
-          docker pull ghcr.io/${{ github.repository }}:main
-          docker run --network=winwin-backend_app -d ghcr.io/${{ github.repository }}:main
+      - name: Pull image
+        run: docker pull ghcr.io/${{ github.repository }}:latest
