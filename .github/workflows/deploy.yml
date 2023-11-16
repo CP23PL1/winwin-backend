@@ -8,7 +8,6 @@ on:
       - completed
 
 env:
-  CONTAINER_NAME: winwin-api
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -28,15 +27,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-
-      - name: Stop container
-        run: |
-          docker stop ${{env.CONTAINER_NAME}} || true
-          docker rm ${{env.CONTAINER_NAME}} || true
-
-      - name: Remove image
-        run: |
-          docker rmi ${{steps.meta.outputs.tags}} || true
+          tags: latest
 
       - name: Setup Environment File
         run: |
@@ -52,10 +43,4 @@ jobs:
       - name: Pull image and Run image from ${{ env.REGISTRY }}
         run: |
           docker pull ${{steps.meta.outputs.tags}}
-          docker run -d \
-            --name ${{env.CONTAINER_NAME}} \
-            -p ${{vars.PORT}}:${{vars.PORT}} \
-            --net winwin \
-            --restart=always \
-            --env-file .env \
-          ${{steps.meta.outputs.tags}}
+          docker compose up -d
