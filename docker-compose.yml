@@ -3,9 +3,7 @@ version: '3'
 services:
   app:
     container_name: winwin-api
-    image: winwin-api
-    build:
-      context: .
+    image: ghcr.io/cp23pl1/winwin-backend:latest
     ports:
       - '${PORT}:${PORT}'
     restart: always
