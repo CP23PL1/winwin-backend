@@ -20,7 +20,7 @@ COPY --chown=node:node --from=production-build /app/dist /app/dist
 COPY --chown=node:node --from=production-build /app/node_modules /app/node_modules
 
 WORKDIR /app
+RUN yarn migration:run
 ENTRYPOINT [ "node", "dist/main.js" ]
-CMD ["yarn", "migration:run"]
 
 USER node
