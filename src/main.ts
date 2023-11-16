@@ -3,18 +3,15 @@ import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from './filters/exceptions/global-exception.filter';
 
 const API_VERSION = 'v1';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule,
-    new FastifyAdapter({
-      logger: true,
-    }),
-  );
+  const logger = new Logger('Bootstrap', { timestamp: false });
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+
   // App settings
   app.setGlobalPrefix(API_VERSION);
   app.useGlobalPipes(
@@ -35,8 +32,13 @@ async function bootstrap() {
 
   // Server Configurations
   const configService = app.get(ConfigService);
+
   const HOST = configService.get<string>('HOST') || '0.0.0.0';
   const PORT = configService.get<number>('PORT') || 3000;
+  const ENV = configService.get<string>('NODE_ENV');
+
+  logger.debug(`Server running on ${HOST}:${PORT} 🚀`);
+  logger.debug(`Environment: ${ENV}`);
 
   await app.listen(PORT, HOST);
 }

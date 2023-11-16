@@ -7,7 +7,6 @@ RUN yarn install --frozen-lockfile
 # DEVELOPMENT
 FROM builder as development
 ENV NODE_ENV=development
-CMD [""]
 
 # PRODUCTION BUILD
 FROM builder as production-build
