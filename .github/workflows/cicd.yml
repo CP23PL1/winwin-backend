@@ -1,19 +1,59 @@
-name: Deploy on Self-hosted
+name: CI/CD Pipeline
 
 on:
-  workflow_run:
-    workflows: ['Build and Publish Docker Image']
+  push:
     branches: ['main']
-    types:
-      - completed
+    tags: ['v*']
+  pull_request:
+    branches: ['main']
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Container registry ${{ env.REGISTRY }}
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
   pull-and-run:
     runs-on: sit-virtual-machine
+    needs: build-and-push-image
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -58,9 +98,5 @@ jobs:
         with:
           generator: typescript-axios
           openapi-file: openapi.json
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: winwin-client-sdk
-          path: ./typescript-axios-client
+          command-args: |
+            --additional-properties=npmName=winwin-client-sdk,npmRepository=${{ github.repositoryUrl }},npmVersion=${{ steps.meta.outputs.tags }}
