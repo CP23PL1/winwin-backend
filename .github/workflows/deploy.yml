@@ -59,10 +59,8 @@ jobs:
           generator: typescript-axios
           openapi-file: openapi.json
 
-      - name: Push Client SDK to Repository
-        uses: JS-DevTools/npm-publish@v3
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          access: restricted
-          registry: 'https://npm.pkg.github.com'
-          package: ./typescript-axios-client
+          name: winwin-client-sdk
+          path: ./typescript-axios-client
