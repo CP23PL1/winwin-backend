@@ -6,6 +6,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from './filters/exceptions/global-exception.filter';
 import { Environment } from './config/env.validation';
+import * as fs from 'fs';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap', { timestamp: false });
@@ -37,9 +38,13 @@ async function bootstrap() {
     .setVersion(API_VERSION)
     .build();
   const document = SwaggerModule.createDocument(app, documentBuilder);
-  SwaggerModule.setup(API_VERSION, app, document, {
-    jsonDocumentUrl: '/openapi.json',
-  });
+  SwaggerModule.setup(API_VERSION, app, document);
+
+  // Generate OpenAPI JSON file for production
+  if (ENV === Environment.Production) {
+    logger.debug('Generate OpenAPI JSON file');
+    fs.writeFileSync('openapi.json', JSON.stringify(document, null, 2), { encoding: 'utf-8' });
+  }
 
   logger.debug(`Server running on ${HOST}:${PORT} 🚀`);
   logger.debug(`Environment: ${ENV}`);

@@ -9,7 +9,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  CLIENT_SDK_NAME: '@${{ github.repository_owner }}/winwin-client-sdk'
   NPM_REGISTRY: 'https://npm.pkg.github.com'
 
 jobs:
@@ -86,19 +85,15 @@ jobs:
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
 
+      - name: Create openapi.json
+        run: touch openapi.json
+
       - name: Pull image and Run image from ${{ env.REGISTRY }}
         run: |
           docker pull ${{steps.meta.outputs.tags}}
           docker compose down
           docker compose up -d
           docker image prune -f
-
-      - name: Generate Client SDK (Axios)
-        uses: openapi-generators/openapitools-generator-action@v1
-        with:
-          generator: typescript-axios
-          openapi-url: http://localhost:${{vars.PORT}}/openapi.json
-          config-file: openapi-generator.config.json
 
       - uses: actions/setup-node@v3
         with:
@@ -108,10 +103,20 @@ jobs:
           scope: ${{ github.repository_owner }}
           registry-url: ${{ env.NPM_REGISTRY }}
 
-      - run: |
+      - name: Generate Client SDK (Typescript-Axios)
+        uses: openapi-generators/openapitools-generator-action@v1
+        with:
+          generator: typescript-axios
+          openapi-file: openapi.json
+          config-file: openapi-generator.config.json
+
+      - name: Install Client SDK dependencies (Typescript-Axios)
+        run: |
           cd ./typescript-axios-client
           npm i
-      - uses: JS-DevTools/npm-publish@v3
+
+      - name: Publish Client SDK (Typescript-Axios)
+        uses: JS-DevTools/npm-publish@v3
         with:
           package: ./typescript-axios-client
           token: ${{ secrets.GITHUB_TOKEN }}
