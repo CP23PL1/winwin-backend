@@ -109,6 +109,8 @@ jobs:
           generator: typescript-axios
           openapi-file: openapi.json
           config-file: openapi-generator.config.json
+          command-args: |
+            --additional-properties=npmVersion=${{ steps.meta.outputs.tags }}
 
       - name: Install Client SDK dependencies (Typescript-Axios)
         run: |
