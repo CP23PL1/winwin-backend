@@ -3,7 +3,6 @@ name: CI/CD Pipeline
 on:
   push:
     branches: ['main']
-    tags: ['v*.*.*']
   pull_request:
     branches: ['main']
 
@@ -104,6 +103,14 @@ jobs:
           scope: ${{ github.repository_owner }}
           registry-url: ${{ env.NPM_REGISTRY }}
 
+      - name: Auto Increment Semver Action
+        uses: MCKanpolat/auto-semver-action@v1
+        id: versioning
+        with:
+          releaseType: patch
+          incrementPerCommit: false
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Generate Client SDK (Typescript-Axios)
         uses: openapi-generators/openapitools-generator-action@v1
         with:
@@ -111,7 +118,7 @@ jobs:
           openapi-file: openapi.json
           config-file: openapi-generator.config.json
           command-args: |
-            --additional-properties=npmVersion=${{ steps.meta.outputs.tags }}
+            --additional-properties=npmVersion=${{ steps.versioning.outputs.version }}
 
       - name: Install Client SDK dependencies (Typescript-Axios)
         run: |
