@@ -53,6 +53,11 @@ jobs:
   pull-and-run:
     runs-on: sit-virtual-machine
     needs: build-and-push-image
+
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -90,7 +95,9 @@ jobs:
       - name: Pull image and Run image from ${{ env.REGISTRY }}
         run: |
           docker pull ${{steps.meta.outputs.tags}}
+          docker compose down
           docker compose up -d
+          docker image prune -f
 
       - name: Generate Client SDK (Axios)
         uses: openapi-generators/openapitools-generator-action@v1
@@ -100,10 +107,14 @@ jobs:
           command-args: |
             --additional-properties=npmName=winwin-client-sdk,npmRepository=${{ github.repositoryUrl }},npmVersion=1.0.0
 
-      - name: Publish Client SDK (Axios)
-        uses: JS-DevTools/npm-publish@v3
+      - uses: actions/setup-node@v3
         with:
-          access: restricted
+          node-version: '20'
+      - run: |
+          cd ./typescript-axios-client
+          npm i
+      - uses: JS-DevTools/npm-publish@v3
+        with:
           package: ./typescript-axios-client
-          registry: 'https://npm.pkg.github.com'
           token: ${{ secrets.GITHUB_TOKEN }}
+          registry: 'https://npm.pkg.github.com'
