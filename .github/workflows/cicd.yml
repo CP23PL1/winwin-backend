@@ -97,7 +97,7 @@ jobs:
         uses: openapi-generators/openapitools-generator-action@v1
         with:
           generator: typescript-axios
-          openapi-url: http://localhost:${{vars.PORT}}/${{vars.API_VERSION}}-json
+          openapi-url: http://localhost:${{vars.PORT}}/openapi.json
           config-file: openapi-generator.config.json
 
       - uses: actions/setup-node@v3
