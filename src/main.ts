@@ -5,12 +5,19 @@ import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from './filters/exceptions/global-exception.filter';
-
-const API_VERSION = 'v1';
+import { Environment } from './config/env.validation';
+import { generateApiDocFile } from './api-doc-generator';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap', { timestamp: false });
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
+
+  // Configurations
+  const configService = app.get(ConfigService);
+  const API_VERSION = configService.get<string>('API_VERSION');
+  const HOST = configService.get<string>('HOST') || '0.0.0.0';
+  const PORT = configService.get<number>('PORT') || 3000;
+  const ENV = configService.get<Environment>('NODE_ENV');
 
   // App settings
   app.setGlobalPrefix(API_VERSION);
@@ -30,15 +37,16 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, documentBuilder);
   SwaggerModule.setup(API_VERSION, app, document);
 
-  // Server Configurations
-  const configService = app.get(ConfigService);
-
-  const HOST = configService.get<string>('HOST') || '0.0.0.0';
-  const PORT = configService.get<number>('PORT') || 3000;
-  const ENV = configService.get<string>('NODE_ENV');
+  // Generate OpenAPI JSON file for production
+  if (ENV === Environment.Production) {
+    logger.debug('Generating OpenAPI JSON file...');
+    await generateApiDocFile(document);
+    logger.debug('OpenAPI JSON file generated');
+  }
 
   logger.debug(`Server running on ${HOST}:${PORT} 🚀`);
   logger.debug(`Environment: ${ENV}`);
+  logger.debug(`Api Version: ${API_VERSION}`);
 
   await app.listen(PORT, HOST);
 }

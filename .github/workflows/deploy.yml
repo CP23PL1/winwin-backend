@@ -12,7 +12,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build:
+  pull-and-run:
     runs-on: sit-virtual-machine
     steps:
       - name: Checkout repository
@@ -36,6 +36,7 @@ jobs:
         run: |
           touch .env
           echo "NODE_ENV=production" >> .env
+          echo "API_VERSION=${{ vars.API_VERSION }}" >> .env
           echo "PORT=${{ vars.PORT }}" >> .env
           echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
@@ -47,3 +48,15 @@ jobs:
         run: |
           docker pull ${{steps.meta.outputs.tags}}
           docker compose up -d
+
+      - name: Generate Client SDK (Node.js)
+        uses: openapi-generators/openapitools-generator-action@v1
+        with:
+          generator: typescript-node
+          openapi-file: ./api-doc.json
+
+      - name: Publish Client SDK (Node.js)
+        uses: actions/upload-artifact@v3
+        with:
+          name: node-sdk
+          path: ./typescript-node

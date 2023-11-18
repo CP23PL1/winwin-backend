@@ -5,6 +5,8 @@
 # environment file
 .env
 
+api-doc.json
+
 # Logs
 logs
 *.log

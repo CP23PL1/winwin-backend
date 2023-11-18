@@ -14,6 +14,8 @@ services:
       - redis
     networks:
       - app
+    volumes:
+      - ./api-doc.json:/app/api-doc.json
 
   postgres:
     image: postgis/postgis:16-3.4-alpine
