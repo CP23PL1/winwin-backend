@@ -98,7 +98,7 @@ jobs:
           generator: typescript-axios
           openapi-file: openapi.json
           command-args: |
-            --additional-properties=npmName=winwin-client-sdk,npmRepository=${{ github.repositoryUrl }},npmVersion=main
+            --additional-properties=npmName=winwin-client-sdk,npmRepository=${{ github.repositoryUrl }},npmVersion=1.0.0
 
       - name: Publish Client SDK (Axios)
         uses: JS-DevTools/npm-publish@v3
