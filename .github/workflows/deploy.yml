@@ -63,4 +63,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: node-sdk
-          path: ./typescript-node
+          path: ./typescript-node-client
