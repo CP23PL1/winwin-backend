@@ -4,6 +4,7 @@
 
 # environment file
 .env
+*.env.*
 
 openapi.json
 
