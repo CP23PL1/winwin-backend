@@ -53,14 +53,16 @@ jobs:
           docker pull ${{steps.meta.outputs.tags}}
           docker compose up -d
 
-      - name: Generate Client SDK (Node.js)
+      - name: Generate Client SDK (Axios)
         uses: openapi-generators/openapitools-generator-action@v1
         with:
-          generator: typescript-node
+          generator: typescript-axios
           openapi-file: openapi.json
 
-      - name: Publish Client SDK (Node.js)
-        uses: actions/upload-artifact@v3
+      - name: Push Client SDK to Repository
+        uses: JS-DevTools/npm-publish@v3
         with:
-          name: winwin-sdk
-          path: ./typescript-node-client
+          token: ${{ secrets.GITHUB_TOKEN }}
+          access: restricted
+          registry: 'https://npm.pkg.github.com'
+          package: ./typescript-axios-client
