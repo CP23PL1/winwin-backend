@@ -9,6 +9,9 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  SCOPE: '@${{ github.repository_owner }}'
+  CLIENT_SDK_NAME: '@${{ github.repository_owner }}/winwin-client-sdk'
+  NPM_REGISTRY: 'https://npm.pkg.github.com'
 
 jobs:
   build-and-push-image:
@@ -53,10 +56,6 @@ jobs:
   pull-and-run:
     runs-on: sit-virtual-machine
     needs: build-and-push-image
-
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: Checkout repository
@@ -105,11 +104,16 @@ jobs:
           generator: typescript-axios
           openapi-file: openapi.json
           command-args: |
-            --additional-properties=npmName=winwin-client-sdk,npmRepository=${{ github.repositoryUrl }},npmVersion=1.0.0
+            --additional-properties=npmName=${{ env.CLIENT_SDK_NAME }},npmRepository=${{ env.NPM_REGISTRY }},npmVersion=1.0.0
 
       - uses: actions/setup-node@v3
         with:
           node-version: '20'
+          always-auth: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+          scope: ${{ env.SCOPE }}
+          registry-url: ${{ env.NPM_REGISTRY }}
+
       - run: |
           cd ./typescript-axios-client
           npm i
@@ -117,4 +121,4 @@ jobs:
         with:
           package: ./typescript-axios-client
           token: ${{ secrets.GITHUB_TOKEN }}
-          registry: 'https://npm.pkg.github.com'
+          registry: ${{ env.NPM_REGISTRY }}
