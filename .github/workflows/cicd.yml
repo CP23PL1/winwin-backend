@@ -120,14 +120,13 @@ jobs:
           command-args: |
             --additional-properties=npmVersion=${{ steps.versioning.outputs.version }}
 
-      - name: Install Client SDK dependencies (Typescript-Axios)
-        run: |
-          cd ./typescript-axios-client
-          npm i
-
-      - name: Publish Client SDK (Typescript-Axios)
-        uses: JS-DevTools/npm-publish@v3
+      - name: Push Client SDK to Github
+        uses: cpina/github-action-push-to-another-repository@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.CLIENT_SDK_BOT_TOKEN }}
         with:
-          package: ./typescript-axios-client
-          token: ${{ secrets.GITHUB_TOKEN }}
-          registry: ${{ env.NPM_REGISTRY }}
+          source-directory: ./typescript-axios-client
+          destination-github-username: ${{ github.repository_owner }}
+          destination-repository-name: 'winwin-client-sdk'
+          user-email: '${{ github.repository_owner }}@github.com'
+          target-branch: main
