@@ -1,7 +1,7 @@
 {
   "additionalProperties": {
     "npmName": "@cp23pl1/winwin-client-sdk",
-    "npmRegistry": "https://npm.pkg.github.com"
+    "npmRepository": "https://npm.pkg.github.com"
   },
   "gitHost": "github.com",
   "gitUserId": "cp23pl1",
