@@ -3,7 +3,6 @@ name: CI/CD Pipeline
 on:
   push:
     branches: ['main']
-    tags: ['v*']
   pull_request:
     branches: ['main']
 
@@ -99,4 +98,12 @@ jobs:
           generator: typescript-axios
           openapi-file: openapi.json
           command-args: |
-            --additional-properties=npmName=winwin-client-sdk,npmRepository=${{ github.repositoryUrl }},npmVersion=${{ steps.meta.outputs.tags }}
+            --additional-properties=npmName=winwin-client-sdk,npmRepository=${{ github.repositoryUrl }},npmVersion=main
+
+      - name: Publish Client SDK (Axios)
+        uses: JS-DevTools/npm-publish@v3
+        with:
+          access: restricted
+          package: ./typescript-axios-client
+          registry: 'https://npm.pkg.github.com'
+          token: ${{ secrets.GITHUB_TOKEN }}
