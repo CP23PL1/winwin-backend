@@ -9,7 +9,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  SCOPE: '@${{ github.repository_owner }}'
   CLIENT_SDK_NAME: '@${{ github.repository_owner }}/winwin-client-sdk'
   NPM_REGISTRY: 'https://npm.pkg.github.com'
 
@@ -87,10 +86,6 @@ jobs:
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
 
-      - name: Touch openapi.json
-        run: |
-          touch openapi.json
-
       - name: Pull image and Run image from ${{ env.REGISTRY }}
         run: |
           docker pull ${{steps.meta.outputs.tags}}
@@ -102,16 +97,15 @@ jobs:
         uses: openapi-generators/openapitools-generator-action@v1
         with:
           generator: typescript-axios
-          openapi-file: openapi.json
-          command-args: |
-            --additional-properties=npmName=${{ env.CLIENT_SDK_NAME }},npmRepository=${{ env.NPM_REGISTRY }},npmVersion=1.0.0
+          openapi-url: http://localhost:${{vars.PORT}}/${{vars.API_VERSION}}-json
+          config-file: openapi-generator.config.json
 
       - uses: actions/setup-node@v3
         with:
           node-version: '20'
           always-auth: true
           token: ${{ secrets.GITHUB_TOKEN }}
-          scope: ${{ env.SCOPE }}
+          scope: ${{ github.repository_owner }}
           registry-url: ${{ env.NPM_REGISTRY }}
 
       - run: |
