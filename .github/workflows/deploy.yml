@@ -62,5 +62,5 @@ jobs:
       - name: Publish Client SDK (Node.js)
         uses: actions/upload-artifact@v3
         with:
-          name: node-sdk
+          name: winwin-sdk
           path: ./typescript-node-client
