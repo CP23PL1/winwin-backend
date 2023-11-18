@@ -53,7 +53,7 @@ jobs:
         uses: openapi-generators/openapitools-generator-action@v1
         with:
           generator: typescript-node
-          openapi-file: ./api-doc.json
+          openapi-file: openapi.json
 
       - name: Publish Client SDK (Node.js)
         uses: actions/upload-artifact@v3

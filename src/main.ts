@@ -6,7 +6,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from './filters/exceptions/global-exception.filter';
 import { Environment } from './config/env.validation';
-import { generateApiDocFile } from './api-doc-generator';
+import * as fs from 'fs';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap', { timestamp: false });
@@ -39,9 +39,8 @@ async function bootstrap() {
 
   // Generate OpenAPI JSON file for production
   if (ENV === Environment.Production) {
-    logger.debug('Generating OpenAPI JSON file...');
-    await generateApiDocFile(document);
-    logger.debug('OpenAPI JSON file generated');
+    logger.debug('Generate OpenAPI JSON file');
+    fs.writeFileSync('openapi.json', JSON.stringify(document, null, 2), { encoding: 'utf-8' });
   }
 
   logger.debug(`Server running on ${HOST}:${PORT} 🚀`);

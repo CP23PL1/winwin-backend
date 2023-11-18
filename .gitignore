@@ -5,7 +5,7 @@
 # environment file
 .env
 
-api-doc.json
+openapi.json
 
 # Logs
 logs
