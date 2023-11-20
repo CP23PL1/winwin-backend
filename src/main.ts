@@ -6,21 +6,21 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { GlobalExceptionFilter } from './filters/exceptions/global-exception.filter';
 import { Environment } from './config/env.validation';
-import * as fs from 'fs';
 
 async function bootstrap() {
-  const logger = new Logger('Bootstrap', { timestamp: false });
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter());
 
   // Configurations
   const configService = app.get(ConfigService);
   const API_VERSION = configService.get<string>('API_VERSION');
+  const API_VERSION_PREFIX = `v${API_VERSION.split('.')[0]}`;
   const HOST = configService.get<string>('HOST') || '0.0.0.0';
   const PORT = configService.get<number>('PORT') || 3000;
   const ENV = configService.get<Environment>('NODE_ENV');
 
   // App settings
-  app.setGlobalPrefix(API_VERSION);
+  app.setGlobalPrefix(API_VERSION_PREFIX);
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -33,18 +33,14 @@ async function bootstrap() {
 
   // API Documentation
   const documentBuilder = new DocumentBuilder()
-    .setTitle('WinWin API Documentation')
-    .setDescription('An application for Motorcycle Taxi')
+    .setTitle('WinWin API')
+    .setDescription('An application programming interface for Motorcycle Taxi')
+    .addServer(`http://${HOST}:${PORT}`, 'Local server')
+    .addServer('https://capstone23.sit.kmutt.ac.th/pl1', 'Production server')
     .setVersion(API_VERSION)
     .build();
   const document = SwaggerModule.createDocument(app, documentBuilder);
-  SwaggerModule.setup(API_VERSION, app, document);
-
-  // Generate OpenAPI JSON file for production
-  if (ENV === Environment.Production) {
-    logger.debug('Generate OpenAPI JSON file');
-    fs.writeFileSync('openapi.json', JSON.stringify(document, null, 2), { encoding: 'utf-8' });
-  }
+  SwaggerModule.setup('openapi', app, document);
 
   logger.debug(`Server running on ${HOST}:${PORT} 🚀`);
   logger.debug(`Environment: ${ENV}`);
