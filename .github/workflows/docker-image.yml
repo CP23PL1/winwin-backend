@@ -1,11 +1,9 @@
 name: Build and Push Docker Image
 
 on:
-  workflow_run:
-    workflows: ['Create Semantic Release']
+  push:
     branches: [main]
-    types:
-      - completed
+    tags: ['*.*.*']
 
 env:
   REGISTRY: ghcr.io
