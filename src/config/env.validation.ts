@@ -1,5 +1,5 @@
 import { plainToInstance } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, IsString, validateSync } from 'class-validator';
+import { IsEnum, IsNumber, IsOptional, IsSemVer, IsString, validateSync } from 'class-validator';
 
 export enum Environment {
   Development = 'development',
@@ -18,7 +18,7 @@ class EnvironmentVariables {
   @IsOptional()
   PORT?: number;
 
-  @IsString()
+  @IsSemVer()
   API_VERSION: string;
 
   @IsString()
