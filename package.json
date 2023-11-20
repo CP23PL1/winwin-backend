@@ -22,7 +22,7 @@
     "migration:generate": "yarn typeorm migration:generate",
     "migration:run": "yarn typeorm migration:run",
     "migration:revert": "yarn typeorm migration:revert",
-    "semantic-release": "semantic-release --branches main",
+    "semantic-release": "semantic-release",
     "commit": "git-cz"
   },
   "dependencies": {
@@ -95,13 +95,31 @@
     "type": "git",
     "url": "https://github.com/CP23PL1/winwin-backend.git"
   },
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com",
-    "access": "restricted"
-  },
   "config": {
     "commitizen": {
       "path": "./node_modules/cz-conventional-changelog"
     }
+  },
+  "release": {
+    "branches": [
+      "+([0-9])?(.{+([0-9]),x}).x",
+      "main",
+      "next",
+      "next-major",
+      {
+        "name": "beta",
+        "prerelease": true
+      },
+      {
+        "name": "alpha",
+        "prerelease": true
+      }
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/github"
+    ],
+    "tagFormat": "${version}"
   }
 }
