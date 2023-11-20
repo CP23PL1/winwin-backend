@@ -14,7 +14,9 @@ import {
 import { ServiceSpotsService } from './service-spots.service';
 import { CreateServiceSpot } from './dto/create-service-spot.dto';
 import { UpdateServiceSpot } from './dto/update-service-spot.dto';
-import { ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
+import { ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { ServiceSpotDto } from './dto/service-spot.dto';
+import { ServiceSpot } from './entities/service-spot.entity';
 
 @ApiTags('Service Spots')
 @Controller('service-spots')
@@ -30,6 +32,11 @@ export class ServiceSpotsController {
     return this.serviceSpotsService.create(data);
   }
 
+  @ApiOkResponse({
+    type: ServiceSpotDto,
+    description: 'List of service spots with distance from given location.',
+    isArray: true,
+  })
   @Get()
   findAll(
     @Query('lat', ParseFloatPipe) lat?: number,
@@ -39,20 +46,53 @@ export class ServiceSpotsController {
     return this.serviceSpotsService.findAllByDistance(lat, lng, radius);
   }
 
+  @ApiOkResponse({
+    type: ServiceSpot,
+    description: 'Get service spot detail by service spot id.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Service spot not found.',
+  })
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const serviceSpot = await this.serviceSpotsService.findOne(id);
+
     if (!serviceSpot) {
       throw new NotFoundException(`Service Spot #${id} not found`);
     }
+
     return serviceSpot;
   }
 
+  @ApiOkResponse({
+    type: ServiceSpot,
+    description: 'Update service spot detail by service spot id.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Service spot not found.',
+  })
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateServiceSpot) {
-    return this.serviceSpotsService.update(id, data);
+  async update(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateServiceSpot) {
+    const serviceSpot = await this.serviceSpotsService.findOne(id);
+
+    if (!serviceSpot) {
+      throw new NotFoundException(`Service Spot #${id} not found`);
+    }
+
+    const updatedServiceSpot = await this.serviceSpotsService.update(id, data);
+
+    return {
+      ...serviceSpot,
+      ...updatedServiceSpot,
+    };
   }
 
+  @ApiOkResponse({
+    description: 'Delete service spot by service spot id.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Service spot not found.',
+  })
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.serviceSpotsService.remove(id);
