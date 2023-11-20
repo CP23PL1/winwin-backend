@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   ParseFloatPipe,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { ServiceSpotsService } from './service-spots.service';
 import { CreateServiceSpot } from './dto/create-service-spot.dto';
@@ -17,8 +18,10 @@ import { UpdateServiceSpot } from './dto/update-service-spot.dto';
 import { ApiCreatedResponse, ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { ServiceSpotDto } from './dto/service-spot.dto';
 import { ServiceSpot } from './entities/service-spot.entity';
+import { JwtGuard } from 'src/authorization/jwt.guard';
 
 @ApiTags('Service Spots')
+@UseGuards(JwtGuard)
 @Controller('service-spots')
 export class ServiceSpotsController {
   constructor(private readonly serviceSpotsService: ServiceSpotsService) {}

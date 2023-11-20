@@ -6,6 +6,7 @@ import { ServiceSpotsModule } from './service-spots/service-spots.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from './db/data-source';
+import { AuthorizationModule } from './authorization/authorization.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { dataSourceOptions } from './db/data-source';
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
     ServiceSpotsModule,
+    AuthorizationModule,
   ],
   providers: [
     {
