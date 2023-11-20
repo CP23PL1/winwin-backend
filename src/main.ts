@@ -36,7 +36,7 @@ async function bootstrap() {
     .setTitle('WinWin API')
     .setDescription('An application programming interface for Motorcycle Taxi')
     .addServer(`http://localhost:${PORT}`, 'Local server')
-    .addServer('https://capstone23.sit.kmutt.ac.th/pl1', 'Production server')
+    .addServer('http://capstone23.sit.kmutt.ac.th/pl1', 'Production server')
     .addBearerAuth()
     .setVersion(API_VERSION)
     .build();
