@@ -1,0 +1,22 @@
+name: Create Semantic Release
+
+on:
+  push:
+    branches: main
+  pull_request:
+    branches: '*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    if: ${{github.ref == 'refs/heads/main' && github.event.pull_request.merged == true}}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Semantic Release
+        id: semantic-release
+        uses: cycjimmy/semantic-release-action@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
