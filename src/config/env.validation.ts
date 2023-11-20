@@ -18,6 +18,12 @@ class EnvironmentVariables {
   @IsOptional()
   PORT?: number;
 
+  @IsString()
+  AUTH0_DOMAIN: string;
+
+  @IsString()
+  AUTH0_AUDIENCE: string;
+
   @IsSemVer()
   API_VERSION: string;
 

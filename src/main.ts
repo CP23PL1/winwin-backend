@@ -35,8 +35,9 @@ async function bootstrap() {
   const documentBuilder = new DocumentBuilder()
     .setTitle('WinWin API')
     .setDescription('An application programming interface for Motorcycle Taxi')
-    .addServer(`http://${HOST}:${PORT}`, 'Local server')
+    .addServer(`http://localhost:${PORT}`, 'Local server')
     .addServer('https://capstone23.sit.kmutt.ac.th/pl1', 'Production server')
+    .addBearerAuth()
     .setVersion(API_VERSION)
     .build();
   const document = SwaggerModule.createDocument(app, documentBuilder);
