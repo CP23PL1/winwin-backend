@@ -13,7 +13,6 @@ export class GlobalExceptionFilter<T extends HttpException> implements Exception
     const error =
       typeof response === 'string' ? { message: exceptionResponse } : (exceptionResponse as object);
 
-    console.log(error);
     response.status(status).send(error);
   }
 }
