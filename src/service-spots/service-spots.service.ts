@@ -42,7 +42,7 @@ export class ServiceSpotsService {
   }
 
   update(id: number, data: UpdateServiceSpot) {
-    return this.serviceSpotRepo.update({ id }, data);
+    return this.serviceSpotRepo.save({ id, ...data });
   }
 
   remove(id: number) {
