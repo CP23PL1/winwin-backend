@@ -1,9 +1,8 @@
 name: CI/CD Pipeline
 
 on:
-  push:
-    tags:
-      - '*'
+  release:
+    types: [published]
 
 env:
   REGISTRY: ghcr.io
