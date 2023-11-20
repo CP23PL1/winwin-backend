@@ -6,13 +6,19 @@ on:
   pull_request:
     branches: '*'
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
   build-and-release:
-    runs-on: ubuntu-latest
     if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+
     permissions:
       contents: write
       packages: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -26,3 +32,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        if: ${{ steps.semantic-release.outputs.new_release_published == true}}
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: ${{ steps.semantic-release.outputs.new_release_version }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
