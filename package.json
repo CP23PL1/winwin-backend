@@ -90,6 +90,7 @@
     "url": "https://github.com/CP23PL1/winwin-backend.git"
   },
   "publishConfig": {
+    "registry": "https://npm.pkg.github.com",
     "access": "restricted"
   },
   "config": {
