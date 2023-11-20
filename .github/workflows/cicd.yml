@@ -1,8 +1,9 @@
 name: CI/CD Pipeline
 
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - '*.*.*'
 
 env:
   REGISTRY: ghcr.io
@@ -11,6 +12,11 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,7 +25,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: ${{env.REGISTRY}}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -28,18 +34,17 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Login to DockerHub
-        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GH_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: ${{ github.event_name != 'pull_request' }}
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
@@ -56,7 +61,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GH_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Docker
         id: meta
@@ -68,7 +73,7 @@ jobs:
         run: |
           touch .env
           echo "NODE_ENV=production" >> .env
-          echo "API_VERSION=${{ vars.API_VERSION }}" >> .env
+          echo "API_VERSION=${{ steps.meta.outputs.version }}" >> .env
           echo "PORT=${{ vars.PORT }}" >> .env
           echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
@@ -78,6 +83,6 @@ jobs:
 
       - name: Pull image and Run image from ${{ env.REGISTRY }}
         run: |
+          docker compose pull
           docker compose down
           docker compose up -d
-          docker image prune -f
