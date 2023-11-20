@@ -85,9 +85,6 @@ jobs:
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
 
-      - name: Create openapi.json
-        run: touch openapi.json
-
       - name: Pull image and Run image from ${{ env.REGISTRY }}
         run: |
           docker pull ${{steps.meta.outputs.tags}}
@@ -115,7 +112,7 @@ jobs:
         uses: openapi-generators/openapitools-generator-action@v1
         with:
           generator: typescript-axios
-          openapi-file: openapi.json
+          openapi-url: http://capstone23.sit.kmutt.ac.th/pl1/openapi-json
           config-file: openapi-generator.config.json
           command-args: |
             --additional-properties=npmVersion=${{ steps.versioning.outputs.version }}
