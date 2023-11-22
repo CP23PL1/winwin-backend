@@ -1,11 +1,15 @@
 name: Release
 
 on:
-  push:
-    branches: main
+  workflow_dispatch:
+  pull_request:
+    branches: ['main']
+    types: [closed]
 
 jobs:
   release:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+
     runs-on: ubuntu-latest
 
     steps:
@@ -23,9 +27,24 @@ jobs:
         run: |
           yarn install --frozen-lockfile
 
-      - name: Run Semantic Release
-        id: release
+      - name: Semantic Release
+        id: semantic-release
+        uses: cycjimmy/semantic-release-action@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+      - name: Create tag for Client SDK repository
+        if: steps.semantic-release.outputs.new_release_published == true || github.event_name == 'workflow_dispatch'
         run: |
-          yarn semantic-release
+          git config --global user.name "winwin-release[bot]"
+          git config --global user.email "winwin-release[bot]@users.noreply.github.com"
+          git tag -f ${{ steps.semantic-release.outputs.new_release_version }} --message "Release ${{ steps.semantic-release.outputs.new_release_version }}"
+
+      - name: Push to Client SDK repository
+        if: steps.semantic-release.outputs.new_release_published == true || github.event_name == 'workflow_dispatch'
+        uses: ad-m/github-push-action@master
+        with:
+          repository: cp23pl1/client-sdk
+          github_token: ${{ secrets.GH_PAT }}
+          force: true
+          tags: true
