@@ -10,7 +10,6 @@ import {
   ParseIntPipe,
   ParseFloatPipe,
   NotFoundException,
-  UseGuards,
 } from '@nestjs/common';
 import { ServiceSpotsService } from './service-spots.service';
 import { CreateServiceSpot } from './dto/create-service-spot.dto';
@@ -21,14 +20,14 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
+  OmitType,
 } from '@nestjs/swagger';
 import { ServiceSpotDto } from './dto/service-spot.dto';
 import { ServiceSpot } from './entities/service-spot.entity';
-import { JwtGuard } from 'src/authorization/jwt.guard';
+import { Public } from 'src/authorization/public.decorator';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
-@UseGuards(JwtGuard)
 @Controller('service-spots')
 export class ServiceSpotsController {
   constructor(private readonly serviceSpotsService: ServiceSpotsService) {}
@@ -47,6 +46,7 @@ export class ServiceSpotsController {
     description: 'List of service spots with distance from given location.',
     isArray: true,
   })
+  @Public()
   @Get()
   findAll(
     @Query('lat', ParseFloatPipe) lat?: number,
@@ -57,12 +57,13 @@ export class ServiceSpotsController {
   }
 
   @ApiOkResponse({
-    type: ServiceSpot,
+    type: OmitType(ServiceSpotDto, ['distance']),
     description: 'Get service spot detail by service spot id.',
   })
   @ApiNotFoundResponse({
     description: 'Service spot not found.',
   })
+  @Public()
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const serviceSpot = await this.serviceSpotsService.findOne(id);

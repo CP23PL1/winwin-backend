@@ -5,15 +5,15 @@ import { Point } from 'typeorm';
 
 export class CreateServiceSpot {
   @ApiProperty({
-    example: 'Service Spot 1',
+    example: 'วินปากซอยประชาอุทิศ 45',
   })
   @Transform(({ value }) => value.trim())
   @IsNotEmpty()
   name: string;
 
   @ApiProperty({
-    example: 'ChIJ0wZrj0K3lzMRQOYHfT8WV5k',
-    description: 'Google Place ID',
+    example: 'MF2W+HQ2',
+    description: 'Google Place ID or Plus Code',
   })
   @Transform(({ value }) => value.trim())
   @IsNotEmpty()
@@ -22,8 +22,8 @@ export class CreateServiceSpot {
   @ApiProperty({
     description: 'Latitude and longitude of the service spot',
     example: {
-      lat: 13.123,
-      lng: 123.123,
+      lat: 13.65139,
+      lng: 100.4969,
     },
   })
   @Transform(

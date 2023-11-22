@@ -22,5 +22,5 @@ export class ServiceSpotDto {
   @ApiProperty()
   updatedAt: string;
   @ApiProperty()
-  distance: number;
+  distance?: number;
 }

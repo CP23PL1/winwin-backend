@@ -26,6 +26,7 @@ export class ServiceSpotsService {
       .createQueryBuilder('serviceSpot')
       .addSelect('ST_Distance(serviceSpot.coords, ST_MakePoint(:lng, :lat)::geography)', 'distance')
       .where('ST_DWithin(serviceSpot.coords, ST_MakePoint(:lng, :lat)::geography, :radius)')
+      .andWhere('serviceSpot.approved IS TRUE')
       .setParameters({
         lat,
         lng,

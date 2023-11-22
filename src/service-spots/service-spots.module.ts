@@ -3,10 +3,9 @@ import { ServiceSpotsService } from './service-spots.service';
 import { ServiceSpotsController } from './service-spots.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServiceSpot } from './entities/service-spot.entity';
-import { AuthorizationModule } from 'src/authorization/authorization.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ServiceSpot]), AuthorizationModule],
+  imports: [TypeOrmModule.forFeature([ServiceSpot])],
   controllers: [ServiceSpotsController],
   providers: [ServiceSpotsService],
 })
