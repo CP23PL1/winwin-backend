@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { JwtStrategy } from './jwt.strategy';
+import { Auth0JwtStrategy } from './auth0-jwt.strategy';
 
 @Module({
-  providers: [JwtStrategy],
+  providers: [Auth0JwtStrategy],
 })
 export class AuthorizationModule {}

@@ -15,8 +15,10 @@ export type JwtPayload = {
   gty: string;
 };
 
+export const AUTH0_STRATEGY_NAME = 'auth0-jwt';
+
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class Auth0JwtStrategy extends PassportStrategy(Strategy, AUTH0_STRATEGY_NAME) {
   constructor(configService: ConfigService) {
     const AUTH0_DOMAIN = configService.get<string>('AUTH0_DOMAIN');
     const AUTH0_AUDIENCE = configService.get<string>('AUTH0_AUDIENCE');
