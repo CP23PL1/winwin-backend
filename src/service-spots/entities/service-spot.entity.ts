@@ -1,8 +1,10 @@
+import { Driver } from 'src/drivers/entities/driver.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   Index,
+  OneToMany,
   Point,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -27,6 +29,9 @@ export class ServiceSpot {
     default: false,
   })
   approved: boolean;
+
+  @OneToMany(() => Driver, (driver) => driver.serviceSpot)
+  drivers: Driver[];
 
   @CreateDateColumn()
   createdAt: Date;

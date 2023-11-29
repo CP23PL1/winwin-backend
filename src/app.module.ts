@@ -8,6 +8,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from './db/data-source';
 import { Auth0JwtGuard } from './authorization/auth0-jwt.guard';
 import { AuthorizationModule } from './authorization/authorization.module';
+import { DriversModule } from './drivers/drivers.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AuthorizationModule } from './authorization/authorization.module';
     TypeOrmModule.forRoot(dataSourceOptions),
     ServiceSpotsModule,
     AuthorizationModule,
+    DriversModule,
   ],
   providers: [
     {
