@@ -1,5 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Point } from 'typeorm';
+
+type Coordinates = {
+  lat: number;
+  lng: number;
+};
 
 export class ServiceSpotDto {
   @ApiProperty()
@@ -10,11 +14,11 @@ export class ServiceSpotDto {
   placeId: string;
   @ApiProperty({
     example: {
-      type: 'Point',
-      coordinates: [123.123, 13.123],
+      lat: 0,
+      lng: 0,
     },
   })
-  coords: Point;
+  coords: Coordinates;
   @ApiProperty()
   approved: boolean;
   @ApiProperty()

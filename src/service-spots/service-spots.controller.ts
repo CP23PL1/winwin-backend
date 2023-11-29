@@ -72,7 +72,19 @@ export class ServiceSpotsController {
       throw new NotFoundException(`Service Spot #${id} not found`);
     }
 
-    return serviceSpot;
+    const serviceSpotDto = new ServiceSpotDto();
+    serviceSpotDto.id = serviceSpot.id;
+    serviceSpotDto.name = serviceSpot.name;
+    serviceSpotDto.placeId = serviceSpot.placeId;
+    serviceSpotDto.coords = {
+      lat: serviceSpot.coords.coordinates[1],
+      lng: serviceSpot.coords.coordinates[0],
+    };
+    serviceSpotDto.approved = serviceSpot.approved;
+    serviceSpotDto.createdAt = serviceSpot.createdAt.toISOString();
+    serviceSpotDto.updatedAt = serviceSpot.updatedAt.toISOString();
+
+    return serviceSpotDto;
   }
 
   @ApiOkResponse({
