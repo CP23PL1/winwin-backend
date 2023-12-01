@@ -18,6 +18,8 @@ export class ServiceSpotDto {
   createdAt: string;
   @ApiProperty()
   updatedAt: string;
-  @ApiProperty()
+  @ApiProperty({
+    required: false,
+  })
   distance?: number;
 }

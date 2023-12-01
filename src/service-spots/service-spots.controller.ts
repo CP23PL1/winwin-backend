@@ -72,23 +72,11 @@ export class ServiceSpotsController {
       throw new NotFoundException(`Service Spot #${id} not found`);
     }
 
-    const serviceSpotDto = new ServiceSpotDto();
-    serviceSpotDto.id = serviceSpot.id;
-    serviceSpotDto.name = serviceSpot.name;
-    serviceSpotDto.placeId = serviceSpot.placeId;
-    serviceSpotDto.coords = {
-      lat: serviceSpot.coords.coordinates[1],
-      lng: serviceSpot.coords.coordinates[0],
-    };
-    serviceSpotDto.approved = serviceSpot.approved;
-    serviceSpotDto.createdAt = serviceSpot.createdAt.toISOString();
-    serviceSpotDto.updatedAt = serviceSpot.updatedAt.toISOString();
-
-    return serviceSpotDto;
+    return this.serviceSpotsService.mapToDto(serviceSpot);
   }
 
   @ApiOkResponse({
-    type: ServiceSpot,
+    type: ServiceSpotDto,
     description: 'Update service spot detail by service spot id.',
   })
   @ApiNotFoundResponse({
@@ -102,12 +90,12 @@ export class ServiceSpotsController {
       throw new NotFoundException(`Service Spot #${id} not found`);
     }
 
-    const updatedServiceSpot = await this.serviceSpotsService.update(id, data);
-
-    return {
+    const updatedServiceSpot = await this.serviceSpotsService.update(id, {
       ...serviceSpot,
-      ...updatedServiceSpot,
-    };
+      ...data,
+    });
+
+    return this.serviceSpotsService.mapToDto(updatedServiceSpot);
   }
 
   @ApiOkResponse({
