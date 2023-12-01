@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { MaxLength } from 'class-validator';
+import { MaxLength, Min, MinLength } from 'class-validator';
 import { DriverRole } from '../entities/driver.entity';
 
 export class CreateDriverDto {
@@ -24,6 +24,14 @@ export class CreateDriverDto {
   })
   @MaxLength(50)
   lastName: string;
+
+  @ApiProperty({
+    example: '0812345678',
+    required: true,
+  })
+  @MinLength(10)
+  @MaxLength(10)
+  phoneNumber: string;
 
   @ApiProperty({
     example: 1,

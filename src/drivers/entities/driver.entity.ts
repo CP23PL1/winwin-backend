@@ -26,6 +26,9 @@ export class Driver {
   @Column()
   lastName: string;
 
+  @Column()
+  phoneNumber: string;
+
   @Column({
     default: false,
   })
