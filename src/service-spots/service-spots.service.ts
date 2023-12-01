@@ -49,4 +49,19 @@ export class ServiceSpotsService {
   remove(id: number) {
     return this.serviceSpotRepo.delete({ id });
   }
+
+  mapToDto(serviceSpot: ServiceSpot): ServiceSpotDto {
+    return {
+      id: serviceSpot.id,
+      name: serviceSpot.name,
+      placeId: serviceSpot.placeId,
+      coords: {
+        lat: serviceSpot.coords.coordinates[1],
+        lng: serviceSpot.coords.coordinates[0],
+      },
+      approved: serviceSpot.approved,
+      createdAt: serviceSpot.createdAt.toISOString(),
+      updatedAt: serviceSpot.updatedAt.toISOString(),
+    };
+  }
 }
