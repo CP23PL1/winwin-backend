@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsNotEmpty } from 'class-validator';
 import { Point } from 'typeorm';
+import { Coordinate } from './coordinate.dto';
 
 export class CreateServiceSpot {
   @ApiProperty({
@@ -20,11 +21,7 @@ export class CreateServiceSpot {
   placeId: string;
 
   @ApiProperty({
-    description: 'Latitude and longitude of the service spot',
-    example: {
-      lat: 13.65139,
-      lng: 100.4969,
-    },
+    type: () => Coordinate,
   })
   @Transform(
     ({ value }) => ({

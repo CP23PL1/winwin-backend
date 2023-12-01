@@ -57,7 +57,7 @@ export class ServiceSpotsController {
   }
 
   @ApiOkResponse({
-    type: OmitType(ServiceSpotDto, ['distance']),
+    type: ServiceSpotDto,
     description: 'Get service spot detail by service spot id.',
   })
   @ApiNotFoundResponse({
