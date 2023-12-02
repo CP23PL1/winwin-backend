@@ -20,8 +20,8 @@ describe('ServiceSpotsController', () => {
             name: 'Test Service Spot',
             placeId: 'test-place-id',
             coords: {
-              type: 'Point',
-              coordinates: [100.5, 13.13],
+              lat: 13.13,
+              lng: 100.5,
             },
             approved: false,
             createdAt: '2021-08-01T00:00:00.000Z',
@@ -59,8 +59,8 @@ describe('ServiceSpotsController', () => {
           name: 'Test Service Spot',
           placeId: 'test-place-id',
           coords: {
-            type: 'Point',
-            coordinates: [100.5, 13.13],
+            lat: 13.13,
+            lng: 100.5,
           },
           approved: false,
           createdAt: '2021-08-01T00:00:00.000Z',
@@ -69,7 +69,9 @@ describe('ServiceSpotsController', () => {
         },
       ];
 
-      expect(await controller.findAll(100.5, 13.13, 100)).toStrictEqual(result);
+      expect(await controller.findAll({ lat: 13.13, lng: 100.5, radius: 1000 })).toStrictEqual(
+        result,
+      );
     });
   });
 });

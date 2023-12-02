@@ -8,7 +8,6 @@ import {
   Body,
   Query,
   ParseIntPipe,
-  ParseFloatPipe,
   NotFoundException,
 } from '@nestjs/common';
 import { ServiceSpotsService } from './service-spots.service';
@@ -23,6 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { ServiceSpotDto } from './dto/service-spot.dto';
 import { Public } from 'src/authorization/public.decorator';
+import { ServiceSpotQueryDto } from './dto/service-spot-query.dto';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
@@ -46,11 +46,7 @@ export class ServiceSpotsController {
   })
   @Public()
   @Get()
-  findAll(
-    @Query('lat', ParseFloatPipe) lat?: number,
-    @Query('lng', ParseFloatPipe) lng?: number,
-    @Query('radius', ParseIntPipe) radius?: number,
-  ) {
+  findAll(@Query() { lat, lng, radius }: ServiceSpotQueryDto) {
     return this.serviceSpotsService.findAllByDistance(lat, lng, radius);
   }
 

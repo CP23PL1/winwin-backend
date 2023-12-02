@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Coordinate } from './coordinate.dto';
+import { Coordinate } from '../../shared/dtos/coordinate.dto';
 
 export class ServiceSpotDto {
   @ApiProperty()
