@@ -4,7 +4,7 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
@@ -17,7 +17,7 @@ export enum DriverRole {
 
 @Entity()
 export class Driver {
-  @PrimaryColumn()
+  @PrimaryGeneratedColumn('uuid')
   uid: string;
 
   @Column()
@@ -26,8 +26,18 @@ export class Driver {
   @Column()
   lastName: string;
 
-  @Column()
+  @Column({
+    unique: true,
+  })
   phoneNumber: string;
+
+  @Column()
+  dateOfBirth: Date;
+
+  @Column({
+    unique: true,
+  })
+  nationalId: string;
 
   @Column({
     default: false,
