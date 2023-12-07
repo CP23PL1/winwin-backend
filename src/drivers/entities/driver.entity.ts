@@ -4,7 +4,7 @@ import {
   CreateDateColumn,
   Entity,
   ManyToOne,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
 
@@ -17,7 +17,7 @@ export enum DriverRole {
 
 @Entity()
 export class Driver {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn()
   uid: string;
 
   @Column()

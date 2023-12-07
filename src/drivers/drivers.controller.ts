@@ -1,16 +1,20 @@
 import {
+  BadRequestException,
   Body,
+  ConflictException,
   Controller,
   Get,
   NotFoundException,
   Param,
-  ParseIntPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import { DriversService } from './drivers.service';
 import { CreateDriverDto } from './dtos/create-driver.dto';
-import { ApiBearerAuth, ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { DriverDto } from './dtos/driver.dto';
+import { FindOneDriverQuery, IdentifierType } from './dtos/find-one-driver-query.dto';
+import { FindOneDriverParam } from './dtos/fine-one-driver-param.dto';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
@@ -23,32 +27,49 @@ export class DriversController {
     description: 'The record has been successfully created.',
   })
   @Post()
-  create(@Body() createDriverDto: CreateDriverDto) {
-    return this.driversService.create(createDriverDto);
+  async create(@Body() createDriverDto: CreateDriverDto) {
+    try {
+      return await this.driversService.create(createDriverDto);
+    } catch (error: any) {
+      switch (error.code) {
+        case '23505':
+          throw new ConflictException(
+            `Driver with phone number ${createDriverDto.phoneNumber} already exists`,
+          );
+        case '23503':
+          throw new BadRequestException(
+            `Service spot with id ${createDriverDto.serviceSpotId} not found`,
+          );
+        default:
+          throw error;
+      }
+    }
   }
 
-  @ApiCreatedResponse({
+  @ApiOkResponse({
     type: DriverDto,
-    description: 'Get individual driver by uid.',
+    description: 'Get individual driver by identifier,',
   })
-  @Get(':uid')
-  async findOne(
-    @Param('uid')
-    uid: string,
+  @Get(':identifier')
+  async findOneByUid(
+    @Param()
+    params: FindOneDriverParam,
+    @Query() query: FindOneDriverQuery,
   ) {
-    const driver = await this.driversService.findOne(uid);
-    if (!driver) {
-      throw new NotFoundException(`Driver #${uid} not found`);
+    let driver = null;
+
+    if (query.identifier_type === IdentifierType.PhoneNumber) {
+      driver = await this.driversService.findOneByPhoneNumber(params.identifier);
+    } else {
+      driver = await this.driversService.findOne(params.identifier);
     }
 
-    const driverDto = new DriverDto();
+    if (!driver) {
+      throw new NotFoundException(
+        `Driver (${query.identifier_type}) ${params.identifier} not found`,
+      );
+    }
 
-    driverDto.uid = driver.uid;
-    driverDto.firstName = driver.firstName;
-    driverDto.lastName = driver.lastName;
-    driverDto.approved = driver.approved;
-    driverDto.serviceSpot = driver.serviceSpot;
-
-    return driverDto;
+    return this.driversService.mapToDto(driver);
   }
 }

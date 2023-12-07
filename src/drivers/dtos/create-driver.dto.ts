@@ -1,8 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, MaxLength, Min, MinLength } from 'class-validator';
+import { IsDateString, MaxLength, MinLength } from 'class-validator';
 import { DriverRole } from '../entities/driver.entity';
 
 export class CreateDriverDto {
+  @ApiProperty({
+    example: 'sms|1230203004',
+  })
+  uid: string;
+
   @ApiProperty({
     example: 'John',
     required: true,
