@@ -60,8 +60,6 @@ export class ServiceSpotsService {
         lng: serviceSpot.coords.coordinates[0],
       },
       approved: serviceSpot.approved,
-      createdAt: serviceSpot.createdAt.toISOString(),
-      updatedAt: serviceSpot.updatedAt.toISOString(),
     };
   }
 }
