@@ -12,6 +12,9 @@ export class DriverDto {
   lastName: string;
 
   @ApiProperty()
+  phoneNumber: string;
+
+  @ApiProperty()
   approved: boolean;
 
   @ApiProperty()
