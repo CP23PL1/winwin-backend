@@ -20,10 +20,8 @@ import {
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
-  OmitType,
 } from '@nestjs/swagger';
 import { ServiceSpotDto } from './dto/service-spot.dto';
-import { ServiceSpot } from './entities/service-spot.entity';
 import { Public } from 'src/authorization/public.decorator';
 
 @ApiTags('Service Spots')
