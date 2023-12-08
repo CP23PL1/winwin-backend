@@ -51,7 +51,7 @@ export class DriversController {
     description: 'Get individual driver by identifier,',
   })
   @Get(':identifier')
-  async findOneByUid(
+  async findOne(
     @Param()
     params: FindOneDriverParam,
     @Query() query: FindOneDriverQuery,
