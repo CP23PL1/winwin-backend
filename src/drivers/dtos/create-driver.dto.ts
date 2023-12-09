@@ -1,11 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, MaxLength, MinLength } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 import { DriverRole } from '../entities/driver.entity';
 
 export class CreateDriverDto {
   @ApiProperty({
     example: 'sms|1230203004',
   })
+  @IsNotEmpty()
   uid: string;
 
   @ApiProperty({
@@ -13,6 +14,7 @@ export class CreateDriverDto {
     required: true,
     maxLength: 50,
   })
+  @IsNotEmpty()
   @MaxLength(50)
   firstName: string;
 
@@ -21,6 +23,7 @@ export class CreateDriverDto {
     required: true,
     maxLength: 50,
   })
+  @IsNotEmpty()
   @MaxLength(50)
   lastName: string;
 
@@ -28,6 +31,7 @@ export class CreateDriverDto {
     example: '+66812345678',
     required: true,
   })
+  @IsNotEmpty()
   @MinLength(12)
   @MaxLength(12)
   phoneNumber: string;
@@ -35,6 +39,7 @@ export class CreateDriverDto {
   @ApiProperty({
     example: '1990-01-01',
   })
+  @IsNotEmpty()
   @IsDateString({
     strict: true,
   })
@@ -43,6 +48,7 @@ export class CreateDriverDto {
   @ApiProperty({
     example: '1234567890123',
   })
+  @IsNotEmpty()
   @MinLength(13)
   @MaxLength(13)
   nationalId: string;
@@ -51,6 +57,8 @@ export class CreateDriverDto {
     example: 1,
     required: true,
   })
+  @IsNotEmpty()
+  @IsInt()
   serviceSpotId: number;
 
   @ApiProperty({
@@ -58,5 +66,7 @@ export class CreateDriverDto {
     enum: DriverRole,
     required: true,
   })
+  @IsNotEmpty()
+  @IsEnum(DriverRole)
   role: DriverRole;
 }
