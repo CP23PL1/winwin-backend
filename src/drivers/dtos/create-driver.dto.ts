@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDateString, IsEnum, IsInt, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { DriverRole } from '../entities/driver.entity';
 
 export class CreateDriverDto {
@@ -55,11 +63,11 @@ export class CreateDriverDto {
 
   @ApiProperty({
     example: 1,
-    required: true,
+    required: false,
   })
-  @IsNotEmpty()
+  @IsOptional()
   @IsInt()
-  serviceSpotId: number;
+  serviceSpotId?: number;
 
   @ApiProperty({
     example: DriverRole.Member,
