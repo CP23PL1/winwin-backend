@@ -53,7 +53,8 @@ export class Driver {
   role: DriverRole;
 
   @ManyToOne(() => ServiceSpot, (serviceSpot) => serviceSpot.drivers, {
-    onDelete: 'CASCADE',
+    onDelete: 'SET NULL',
+    nullable: true,
   })
   serviceSpot: ServiceSpot;
 
