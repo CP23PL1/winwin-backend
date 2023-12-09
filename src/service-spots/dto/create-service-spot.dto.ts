@@ -24,6 +24,7 @@ export class CreateServiceSpot {
   @ApiProperty({
     type: () => Coordinate,
   })
+  @IsNotEmpty()
   @Transform(
     ({ value }) => ({
       type: 'Point',
