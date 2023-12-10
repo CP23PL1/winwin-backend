@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Province } from './province.entity';
 import { SubDistrict } from './sub-district.entity';
 
@@ -7,10 +7,10 @@ export class District {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
+  @Column()
   nameTH: string;
 
-  @Column({ unique: true })
+  @Column()
   nameEN: string;
 
   @OneToMany(() => SubDistrict, (subDistrict) => subDistrict.district, {
@@ -20,5 +20,6 @@ export class District {
   subDistricts: SubDistrict[];
 
   @ManyToOne(() => Province, (province) => province.districts)
+  @Index()
   province: Province;
 }

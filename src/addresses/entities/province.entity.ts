@@ -6,10 +6,10 @@ export class Province {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
+  @Column()
   nameTH: string;
 
-  @Column({ unique: true })
+  @Column()
   nameEN: string;
 
   @OneToMany(() => District, (district) => district.province, {
