@@ -1,9 +1,11 @@
+import { SubDistrict } from 'src/addresses/entities/sub-district.entity';
 import { Driver } from 'src/drivers/entities/driver.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   Index,
+  ManyToOne,
   OneToMany,
   Point,
   PrimaryGeneratedColumn,
@@ -23,6 +25,10 @@ export class ServiceSpot {
 
   @Column({ nullable: true })
   addressLine2: string;
+
+  @ManyToOne(() => SubDistrict, (subDistrict) => subDistrict.serviceSpots)
+  @Index()
+  subDistrict: SubDistrict;
 
   @Column({ type: 'geometry' })
   @Index({ spatial: true })
