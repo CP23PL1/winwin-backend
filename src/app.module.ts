@@ -9,6 +9,7 @@ import { dataSourceOptions } from './db/data-source';
 import { Auth0JwtGuard } from './authorization/auth0-jwt.guard';
 import { AuthorizationModule } from './authorization/authorization.module';
 import { DriversModule } from './drivers/drivers.module';
+import { AddressesModule } from './addresses/addresses.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { DriversModule } from './drivers/drivers.module';
     ServiceSpotsModule,
     AuthorizationModule,
     DriversModule,
+    AddressesModule,
   ],
   providers: [
     {
