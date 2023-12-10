@@ -18,6 +18,12 @@ export class ServiceSpot {
   @Column({ unique: true })
   name: string;
 
+  @Column()
+  addressLine1: string;
+
+  @Column({ nullable: true })
+  addressLine2: string;
+
   @Column({ type: 'geometry' })
   @Index({ spatial: true })
   coords: Point;
