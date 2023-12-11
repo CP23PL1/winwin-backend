@@ -50,19 +50,15 @@ export class AddressesController {
     });
   }
 
-  @Get('/:provinceId/districts/:districtId/sub-districts')
+  @Get('/districts/:districtId/sub-districts')
   @PaginatedSwaggerDocs(SubDistrict, addressPaginateConfig)
   async findAllSubDistrictsInDistrict(
     @Paginate() query: PaginateQuery,
-    @Param('provinceId', ParseIntPipe) provinceId: number,
     @Param('districtId', ParseIntPipe) districtId: number,
   ) {
     return this.addressesService.findAllSubDistricts(query, {
       ...addressPaginateConfig,
       where: {
-        province: {
-          id: provinceId,
-        },
         district: {
           id: districtId,
         },
