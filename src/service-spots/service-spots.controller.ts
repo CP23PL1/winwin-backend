@@ -9,6 +9,8 @@ import {
   Query,
   ParseIntPipe,
   NotFoundException,
+  ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { ServiceSpotsService } from './service-spots.service';
 import { CreateServiceSpot } from './dto/create-service-spot.dto';
@@ -35,8 +37,21 @@ export class ServiceSpotsController {
     type: CreateServiceSpot,
   })
   @Post()
-  create(@Body() data: CreateServiceSpot) {
-    return this.serviceSpotsService.create(data);
+  async create(@Body() data: CreateServiceSpot) {
+    try {
+      return await this.serviceSpotsService.create(data);
+    } catch (error: any) {
+      switch (error.code) {
+        case '23505':
+          throw new ConflictException(
+            `Service spot with name ${data.name} or place id ${data.placeId} already exists`,
+          );
+        case '23503':
+          throw new BadRequestException(`Sub district with id ${data.subDistrictId} not found`);
+        default:
+          throw error;
+      }
+    }
   }
 
   @ApiOkResponse({
