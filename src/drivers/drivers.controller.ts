@@ -7,6 +7,7 @@ import {
   Param,
   Post,
   Query,
+  Request,
 } from '@nestjs/common';
 import { DriversService } from './drivers.service';
 import { CreateDriverDto } from './dtos/create-driver.dto';
@@ -26,9 +27,9 @@ export class DriversController {
     description: 'The record has been successfully created.',
   })
   @Post()
-  async create(@Body() createDriverDto: CreateDriverDto) {
+  async create(@Request() req, @Body() createDriverDto: CreateDriverDto) {
     try {
-      return await this.driversService.create(createDriverDto);
+      return await this.driversService.create(req.user.sub, createDriverDto);
     } catch (error: any) {
       switch (error.code) {
         case '23505':
