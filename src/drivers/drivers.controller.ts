@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   ConflictException,
   Controller,
@@ -35,10 +34,6 @@ export class DriversController {
         case '23505':
           throw new ConflictException(
             `Driver with phone number ${createDriverDto.phoneNumber} already exists`,
-          );
-        case '23503':
-          throw new BadRequestException(
-            `Service spot with id ${createDriverDto.serviceSpotId} not found`,
           );
         default:
           throw error;
