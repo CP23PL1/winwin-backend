@@ -1,6 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsNotEmpty } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsPositive } from 'class-validator';
 import { Point } from 'typeorm';
 import { Coordinate } from '../../shared/dtos/coordinate.dto';
 import { Trim } from 'src/shared/decorators/trim.decorator';
@@ -20,6 +20,25 @@ export class CreateServiceSpot {
   @Trim()
   @IsNotEmpty()
   placeId: string;
+
+  @ApiProperty({
+    example: 'ซอยประชาอุทิศ 45',
+  })
+  @Trim()
+  @IsNotEmpty()
+  addressLine1: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  addressLine2: string;
+
+  @ApiProperty({
+    example: 103503,
+    description: 'District ID',
+  })
+  @IsPositive()
+  @IsNotEmpty()
+  subDistrictId: number;
 
   @ApiProperty({
     type: () => Coordinate,
