@@ -5,11 +5,8 @@ import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { Environment } from './config/env.validation';
-import { HttpExceptionFilter } from './filters/http-exception.filter';
-import {
-  ValidationFailedException,
-  validationFailedExceptionFactory,
-} from './shared/exceptions/validation-failed.exception';
+import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
+import { validationFailedExceptionFactory } from './shared/exceptions/validation-failed.exception';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
