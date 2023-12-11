@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Coordinate } from '../../shared/dtos/coordinate.dto';
 
 export class ServiceSpotDto {
@@ -18,6 +18,18 @@ export class ServiceSpotDto {
 
   @ApiProperty()
   approved: boolean;
+
+  @ApiProperty()
+  addressLine1: string;
+
+  @ApiPropertyOptional()
+  addressLine2: string;
+
+  @ApiProperty()
+  subDistrictId: number;
+
+  @ApiProperty()
+  serviceSpotOwnerUid: string;
 
   @ApiProperty({
     required: false,

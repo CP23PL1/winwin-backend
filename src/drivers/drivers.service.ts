@@ -16,6 +16,10 @@ export class DriversService {
     return this.driverRepo.save(createDriverDto);
   }
 
+  update(uid: string, data: Partial<Driver>) {
+    return this.driverRepo.save({ ...data, uid });
+  }
+
   findOne(uid: string) {
     return this.driverRepo.findOne({
       where: { uid },

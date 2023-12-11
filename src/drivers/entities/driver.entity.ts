@@ -3,6 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   ManyToOne,
   PrimaryColumn,
   UpdateDateColumn,
@@ -39,9 +40,11 @@ export class Driver {
 
   @ManyToOne(() => ServiceSpot, (serviceSpot) => serviceSpot.drivers, {
     onDelete: 'SET NULL',
-    nullable: true,
   })
   serviceSpot: ServiceSpot;
+
+  @Column({ nullable: true })
+  serviceSpotId: number;
 
   @CreateDateColumn()
   createdAt: Date;
