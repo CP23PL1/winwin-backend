@@ -1,18 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsDateString,
-  IsEnum,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
-import { DriverRole } from '../entities/driver.entity';
+import { IsDateString, IsNotEmpty, MaxLength, MinLength } from 'class-validator';
 
 export class CreateDriverDto {
   @ApiProperty({
-    example: 'sms|1230203004',
+    example: '1230203004',
   })
   @IsNotEmpty()
   uid: string;
@@ -60,21 +51,4 @@ export class CreateDriverDto {
   @MinLength(13)
   @MaxLength(13)
   nationalId: string;
-
-  @ApiProperty({
-    example: 1,
-    required: false,
-  })
-  @IsOptional()
-  @IsInt()
-  serviceSpotId?: number;
-
-  @ApiProperty({
-    example: DriverRole.Member,
-    enum: DriverRole,
-    required: true,
-  })
-  @IsNotEmpty()
-  @IsEnum(DriverRole)
-  role: DriverRole;
 }

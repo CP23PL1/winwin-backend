@@ -8,13 +8,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-const enumVersion = 1;
-
-export enum DriverRole {
-  Owner = 'owner',
-  Member = 'member',
-}
-
 @Entity()
 export class Driver {
   @PrimaryColumn()
@@ -43,14 +36,6 @@ export class Driver {
     default: false,
   })
   approved: boolean;
-
-  @Column({
-    type: 'enum',
-    enumName: `EDriverRole_${enumVersion}`,
-    nullable: false,
-    enum: DriverRole,
-  })
-  role: DriverRole;
 
   @ManyToOne(() => ServiceSpot, (serviceSpot) => serviceSpot.drivers, {
     onDelete: 'SET NULL',

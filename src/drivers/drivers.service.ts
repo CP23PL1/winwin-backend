@@ -13,10 +13,7 @@ export class DriversService {
   ) {}
 
   create(createDriverDto: CreateDriverDto) {
-    return this.driverRepo.save({
-      ...createDriverDto,
-      serviceSpot: { id: createDriverDto.serviceSpotId },
-    });
+    return this.driverRepo.save(createDriverDto);
   }
 
   findOne(uid: string) {
