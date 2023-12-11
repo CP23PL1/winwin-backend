@@ -12,8 +12,11 @@ export class DriversService {
     private readonly driverRepo: Repository<Driver>,
   ) {}
 
-  create(createDriverDto: CreateDriverDto) {
-    return this.driverRepo.save(createDriverDto);
+  create(uid: string, createDriverDto: CreateDriverDto) {
+    return this.driverRepo.save({
+      ...createDriverDto,
+      uid,
+    });
   }
 
   update(uid: string, data: Partial<Driver>) {

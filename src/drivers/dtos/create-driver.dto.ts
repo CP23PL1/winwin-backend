@@ -3,12 +3,6 @@ import { IsDateString, IsNotEmpty, MaxLength, MinLength } from 'class-validator'
 
 export class CreateDriverDto {
   @ApiProperty({
-    example: '1230203004',
-  })
-  @IsNotEmpty()
-  uid: string;
-
-  @ApiProperty({
     example: 'John',
     required: true,
     maxLength: 50,
