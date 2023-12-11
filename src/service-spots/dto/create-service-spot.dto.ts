@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsNotEmpty, IsOptional, IsPositive } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsPositive, IsString } from 'class-validator';
 import { Point } from 'typeorm';
 import { Coordinate } from '../../shared/dtos/coordinate.dto';
 import { Trim } from 'src/shared/decorators/trim.decorator';
@@ -52,4 +52,12 @@ export class CreateServiceSpot {
     { toClassOnly: true },
   )
   coords: Point;
+
+  @ApiProperty({
+    example: '12345678910',
+    description: 'Driver UID of the service spot owner',
+  })
+  @Trim()
+  @IsNotEmpty()
+  serviceSpotOwnerUid: string;
 }

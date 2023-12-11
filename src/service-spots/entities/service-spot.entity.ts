@@ -5,8 +5,10 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   Point,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -30,6 +32,9 @@ export class ServiceSpot {
   @Index()
   subDistrict: SubDistrict;
 
+  @Column()
+  subDistrictId: number;
+
   @Column({ type: 'geometry' })
   @Index({ spatial: true })
   coords: Point;
@@ -41,6 +46,17 @@ export class ServiceSpot {
     default: false,
   })
   approved: boolean;
+
+  @OneToOne(() => Driver, {
+    nullable: false,
+    onDelete: 'SET NULL',
+    onUpdate: 'CASCADE',
+  })
+  @JoinColumn()
+  serviceSpotOwner: Driver;
+
+  @Column()
+  serviceSpotOwnerUid: string;
 
   @OneToMany(() => Driver, (driver) => driver.serviceSpot)
   drivers: Driver[];

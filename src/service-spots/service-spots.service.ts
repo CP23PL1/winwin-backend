@@ -59,6 +59,10 @@ export class ServiceSpotsService {
         lat: serviceSpot.coords.coordinates[1],
         lng: serviceSpot.coords.coordinates[0],
       },
+      addressLine1: serviceSpot.addressLine1,
+      addressLine2: serviceSpot.addressLine2,
+      subDistrictId: serviceSpot.subDistrictId,
+      serviceSpotOwnerUid: serviceSpot.serviceSpotOwnerUid,
       approved: serviceSpot.approved,
     };
   }

@@ -11,6 +11,7 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  Request,
 } from '@nestjs/common';
 import { ServiceSpotsService } from './service-spots.service';
 import { CreateServiceSpot } from './dto/create-service-spot.dto';
@@ -25,21 +26,52 @@ import {
 import { ServiceSpotDto } from './dto/service-spot.dto';
 import { Public } from 'src/authorization/public.decorator';
 import { ServiceSpotQueryDto } from './dto/service-spot-query.dto';
+import { DriversService } from 'src/drivers/drivers.service';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
 @Controller('service-spots')
 export class ServiceSpotsController {
-  constructor(private readonly serviceSpotsService: ServiceSpotsService) {}
+  constructor(
+    private readonly serviceSpotsService: ServiceSpotsService,
+    private readonly driversService: DriversService,
+  ) {}
 
+  // TODO: Fix dept
   @ApiCreatedResponse({
     description: 'The record has been successfully created.',
     type: CreateServiceSpot,
   })
   @Post()
-  async create(@Body() data: CreateServiceSpot) {
+  async create(@Request() req, @Body() data: CreateServiceSpot) {
+    if (req.user.sub !== data.serviceSpotOwnerUid) {
+      throw new BadRequestException('You can only create service spot for yourself');
+    }
+
+    if (data.serviceSpotOwnerUid) {
+      const driver = await this.driversService.findOne(data.serviceSpotOwnerUid);
+
+      if (!driver) {
+        throw new BadRequestException(`Driver with uid ${data.serviceSpotOwnerUid} not found`);
+      }
+
+      if (!driver.approved) {
+        throw new BadRequestException(
+          `Driver with uid ${data.serviceSpotOwnerUid} is not approved`,
+        );
+      }
+
+      if (driver.serviceSpot) {
+        throw new BadRequestException('You already have service spot');
+      }
+    }
+
     try {
-      return await this.serviceSpotsService.create(data);
+      const newServiceSpot = await this.serviceSpotsService.create(data);
+      await this.driversService.update(data.serviceSpotOwnerUid, {
+        serviceSpotId: newServiceSpot.id,
+      });
+      return this.serviceSpotsService.mapToDto(newServiceSpot);
     } catch (error: any) {
       switch (error.code) {
         case '23505':
