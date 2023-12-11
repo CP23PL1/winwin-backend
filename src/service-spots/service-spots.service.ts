@@ -12,9 +12,9 @@ export class ServiceSpotsService {
     @InjectRepository(ServiceSpot)
     private readonly serviceSpotRepo: Repository<ServiceSpot>,
   ) {}
-  async create(data: CreateServiceSpot) {
-    const newServiceSpot = await this.serviceSpotRepo.save(data);
-    return newServiceSpot;
+
+  create(data: CreateServiceSpot) {
+    return this.serviceSpotRepo.save(data);
   }
 
   findAll() {
