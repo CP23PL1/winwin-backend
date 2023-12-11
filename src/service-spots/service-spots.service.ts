@@ -5,12 +5,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ServiceSpot } from './entities/service-spot.entity';
 import { Repository } from 'typeorm';
 import { ServiceSpotDto } from './dto/service-spot.dto';
+import { AddressesService } from 'src/addresses/addresses.service';
 
 @Injectable()
 export class ServiceSpotsService {
   constructor(
     @InjectRepository(ServiceSpot)
     private readonly serviceSpotRepo: Repository<ServiceSpot>,
+    private readonly addressesService: AddressesService,
   ) {}
 
   create(data: CreateServiceSpot) {
@@ -50,7 +52,10 @@ export class ServiceSpotsService {
     return this.serviceSpotRepo.delete({ id });
   }
 
-  mapToDto(serviceSpot: ServiceSpot): ServiceSpotDto {
+  async mapToDto(serviceSpot: ServiceSpot): Promise<ServiceSpotDto> {
+    const address = await this.addressesService.findOneAddressBySubDistrictId(
+      serviceSpot.subDistrictId,
+    );
     return {
       id: serviceSpot.id,
       name: serviceSpot.name,
@@ -61,7 +66,7 @@ export class ServiceSpotsService {
       },
       addressLine1: serviceSpot.addressLine1,
       addressLine2: serviceSpot.addressLine2,
-      subDistrictId: serviceSpot.subDistrictId,
+      address,
       serviceSpotOwnerUid: serviceSpot.serviceSpotOwnerUid,
       approved: serviceSpot.approved,
     };

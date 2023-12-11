@@ -28,4 +28,18 @@ export class AddressesService {
   findAllSubDistricts(query: PaginateQuery, config: PaginateConfig<ObjectLiteral>) {
     return paginate(query, this.subDistrictRepo, config);
   }
+
+  async findOneAddressBySubDistrictId(subDistrictId: number) {
+    const address = await this.subDistrictRepo.findOne({
+      relations: {
+        district: {
+          province: true,
+        },
+      },
+      where: {
+        id: subDistrictId,
+      },
+    });
+    return address;
+  }
 }

@@ -10,5 +10,6 @@ import { Province } from './entities/province.entity';
   imports: [TypeOrmModule.forFeature([SubDistrict, District, Province])],
   providers: [AddressesService],
   controllers: [AddressesController],
+  exports: [AddressesService],
 })
 export class AddressesModule {}

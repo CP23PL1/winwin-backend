@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Coordinate } from '../../shared/dtos/coordinate.dto';
+import { SubDistrict } from 'src/addresses/entities/sub-district.entity';
 
 export class ServiceSpotDto {
   @ApiProperty()
@@ -26,13 +27,11 @@ export class ServiceSpotDto {
   addressLine2: string;
 
   @ApiProperty()
-  subDistrictId: number;
+  address: SubDistrict;
 
   @ApiProperty()
   serviceSpotOwnerUid: string;
 
-  @ApiProperty({
-    required: false,
-  })
+  @ApiPropertyOptional()
   distance?: number;
 }
