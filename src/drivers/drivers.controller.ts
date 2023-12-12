@@ -15,6 +15,7 @@ import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nest
 import { DriverDto } from './dtos/driver.dto';
 import { FindOneDriverQuery, IdentifierType } from './dtos/find-one-driver-query.dto';
 import { FindOneDriverParam } from './dtos/fine-one-driver-param.dto';
+import { Public } from 'src/authorization/public.decorator';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
@@ -46,6 +47,7 @@ export class DriversController {
     type: DriverDto,
     description: 'Get individual driver by identifier,',
   })
+  @Public()
   @Get(':identifier')
   async findOne(
     @Param()
