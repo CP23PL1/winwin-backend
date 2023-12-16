@@ -14,7 +14,6 @@ import { CreateDriverDto } from './dtos/create-driver.dto';
 import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { DriverDto } from './dtos/driver.dto';
 import { FindOneDriverQuery, IdentifierType } from './dtos/find-one-driver-query.dto';
-import { FindOneDriverParam } from './dtos/fine-one-driver-param.dto';
 import { Public } from 'src/authorization/public.decorator';
 
 @ApiTags('Drivers')
@@ -49,23 +48,17 @@ export class DriversController {
   })
   @Public()
   @Get(':identifier')
-  async findOne(
-    @Param()
-    params: FindOneDriverParam,
-    @Query() query: FindOneDriverQuery,
-  ) {
+  async findOne(@Param('identifier') identifier: string, @Query() query: FindOneDriverQuery) {
     let driver = null;
 
     if (query.identifier_type === IdentifierType.PhoneNumber) {
-      driver = await this.driversService.findOneByPhoneNumber(params.identifier);
+      driver = await this.driversService.findOneByPhoneNumber(identifier);
     } else {
-      driver = await this.driversService.findOne(params.identifier);
+      driver = await this.driversService.findOne(identifier);
     }
 
     if (!driver) {
-      throw new NotFoundException(
-        `Driver (${query.identifier_type}) ${params.identifier} not found`,
-      );
+      throw new NotFoundException(`Driver (${query.identifier_type}) ${identifier} not found`);
     }
 
     return this.driversService.mapToDto(driver);
