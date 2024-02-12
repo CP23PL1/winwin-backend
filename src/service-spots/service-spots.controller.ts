@@ -26,7 +26,7 @@ import {
 import { ServiceSpotDto } from './dto/service-spot.dto';
 import { Public } from 'src/authorization/public.decorator';
 import { ServiceSpotQueryDto } from './dto/service-spot-query.dto';
-import { DriversService } from 'src/drivers/drivers.service';
+import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
@@ -34,7 +34,7 @@ import { DriversService } from 'src/drivers/drivers.service';
 export class ServiceSpotsController {
   constructor(
     private readonly serviceSpotsService: ServiceSpotsService,
-    private readonly driversService: DriversService,
+    private readonly driversMockupApi: DriversMockupApiService,
   ) {}
 
   // TODO: Fix dept
@@ -44,33 +44,14 @@ export class ServiceSpotsController {
   })
   @Post()
   async create(@Request() req, @Body() data: CreateServiceSpot) {
-    if (req.user.sub !== data.serviceSpotOwnerUid) {
+    const driver = await this.driversMockupApi.getDriver(req.user.name, 'phone_number');
+
+    if (driver.id !== data.serviceSpotOwnerId) {
       throw new BadRequestException('You can only create service spot for yourself');
-    }
-
-    if (data.serviceSpotOwnerUid) {
-      const driver = await this.driversService.findOne(data.serviceSpotOwnerUid);
-
-      if (!driver) {
-        throw new BadRequestException(`Driver with uid ${data.serviceSpotOwnerUid} not found`);
-      }
-
-      if (!driver.approved) {
-        throw new BadRequestException(
-          `Driver with uid ${data.serviceSpotOwnerUid} is not approved`,
-        );
-      }
-
-      if (driver.serviceSpot) {
-        throw new BadRequestException('You already have service spot');
-      }
     }
 
     try {
       const newServiceSpot = await this.serviceSpotsService.create(data);
-      await this.driversService.update(data.serviceSpotOwnerUid, {
-        serviceSpotId: newServiceSpot.id,
-      });
       return this.serviceSpotsService.mapToDto(newServiceSpot);
     } catch (error: any) {
       switch (error.code) {
