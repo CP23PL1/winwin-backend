@@ -7,9 +7,10 @@ import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from './db/data-source';
 import { Auth0JwtGuard } from './authorization/auth0-jwt.guard';
-import { AuthorizationModule } from './authorization/authorization.module';
-import { DriversModule } from './drivers/drivers.module';
 import { AddressesModule } from './addresses/addresses.module';
+import { DriversMockupApiModule } from './externals/drivers-mockup-api/drivers-mockup-api.module';
+import { DriversModule } from './drivers/drivers.module';
+import { AuthorizationModule } from './authorization/authorization.module';
 
 @Module({
   imports: [
@@ -19,9 +20,10 @@ import { AddressesModule } from './addresses/addresses.module';
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
     ServiceSpotsModule,
-    AuthorizationModule,
-    DriversModule,
     AddressesModule,
+    DriversMockupApiModule,
+    DriversModule,
+    AuthorizationModule,
   ],
   providers: [
     {

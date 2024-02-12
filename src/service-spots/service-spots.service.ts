@@ -67,7 +67,7 @@ export class ServiceSpotsService {
       addressLine1: serviceSpot.addressLine1,
       addressLine2: serviceSpot.addressLine2,
       address,
-      serviceSpotOwnerUid: serviceSpot.serviceSpotOwnerUid,
+      serviceSpotOwnerId: serviceSpot.serviceSpotOwnerId,
       approved: serviceSpot.approved,
     };
   }

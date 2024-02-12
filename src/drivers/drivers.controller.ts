@@ -1,66 +1,40 @@
 import {
+  BadRequestException,
   Body,
-  ConflictException,
   Controller,
   Get,
-  NotFoundException,
-  Param,
+  HttpCode,
+  HttpStatus,
   Post,
-  Query,
-  Request,
+  Req,
 } from '@nestjs/common';
 import { DriversService } from './drivers.service';
-import { CreateDriverDto } from './dtos/create-driver.dto';
-import { ApiBearerAuth, ApiCreatedResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
-import { DriverDto } from './dtos/driver.dto';
-import { FindOneDriverQuery, IdentifierType } from './dtos/find-one-driver-query.dto';
+import { DriverVerifyDto } from './dtos/driver-verify.dto';
 import { Public } from 'src/authorization/public.decorator';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
 @Controller('drivers')
 export class DriversController {
-  constructor(private readonly driversService: DriversService) {}
+  constructor(
+    private readonly driversService: DriversService,
+    private readonly driversMockupService: DriversMockupApiService,
+  ) {}
 
-  @ApiCreatedResponse({
-    type: CreateDriverDto,
-    description: 'The record has been successfully created.',
-  })
-  @Post()
-  async create(@Request() req, @Body() createDriverDto: CreateDriverDto) {
-    try {
-      return await this.driversService.create(req.user.sub, createDriverDto);
-    } catch (error: any) {
-      switch (error.code) {
-        case '23505':
-          throw new ConflictException(
-            `Driver with phone number ${createDriverDto.phoneNumber} already exists`,
-          );
-        default:
-          throw error;
-      }
+  @Post('verify')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  async verify(@Body() data: DriverVerifyDto) {
+    const driver = await this.driversService.verify(data.phoneNumber);
+    if (!driver) {
+      throw new BadRequestException('This phone number is not registered as a driver');
     }
   }
 
-  @ApiOkResponse({
-    type: DriverDto,
-    description: 'Get individual driver by identifier,',
-  })
-  @Public()
-  @Get(':identifier')
-  async findOne(@Param('identifier') identifier: string, @Query() query: FindOneDriverQuery) {
-    let driver = null;
-
-    if (query.identifier_type === IdentifierType.PhoneNumber) {
-      driver = await this.driversService.findOneByPhoneNumber(identifier);
-    } else {
-      driver = await this.driversService.findOne(identifier);
-    }
-
-    if (!driver) {
-      throw new NotFoundException(`Driver (${query.identifier_type}) ${identifier} not found`);
-    }
-
-    return this.driversService.mapToDto(driver);
+  @Get('me')
+  getMyDriverInfo(@Req() req) {
+    return this.driversMockupService.getDriver(req.user.name, 'phone_number');
   }
 }

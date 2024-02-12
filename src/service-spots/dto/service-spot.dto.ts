@@ -30,7 +30,7 @@ export class ServiceSpotDto {
   address: SubDistrict;
 
   @ApiProperty()
-  serviceSpotOwnerUid: string;
+  serviceSpotOwnerId: number;
 
   @ApiPropertyOptional()
   distance?: number;

@@ -1,14 +1,10 @@
 import { SubDistrict } from 'src/addresses/entities/sub-district.entity';
-import { Driver } from 'src/drivers/entities/driver.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   Index,
-  JoinColumn,
   ManyToOne,
-  OneToMany,
-  OneToOne,
   Point,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -47,19 +43,8 @@ export class ServiceSpot {
   })
   approved: boolean;
 
-  @OneToOne(() => Driver, {
-    nullable: false,
-    onDelete: 'SET NULL',
-    onUpdate: 'CASCADE',
-  })
-  @JoinColumn()
-  serviceSpotOwner: Driver;
-
-  @Column()
-  serviceSpotOwnerUid: string;
-
-  @OneToMany(() => Driver, (driver) => driver.serviceSpot)
-  drivers: Driver[];
+  @Column({ unique: true })
+  serviceSpotOwnerId: number;
 
   @CreateDateColumn()
   createdAt: Date;

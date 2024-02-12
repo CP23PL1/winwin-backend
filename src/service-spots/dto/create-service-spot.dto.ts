@@ -54,10 +54,10 @@ export class CreateServiceSpot {
   coords: Point;
 
   @ApiProperty({
-    example: '12345678910',
-    description: 'Driver UID of the service spot owner',
+    example: 1,
+    description: 'Driver ID of the service spot owner',
   })
-  @Trim()
+  @IsPositive()
   @IsNotEmpty()
-  serviceSpotOwnerUid: string;
+  serviceSpotOwnerId: number;
 }
