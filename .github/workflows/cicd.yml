@@ -76,6 +76,8 @@ jobs:
           echo "API_VERSION=${{ steps.meta.outputs.version }}" >> .env
           echo "AUTH0_DOMAIN=${{ secrets.AUTH0_DOMAIN }}" >> .env
           echo "AUTH0_AUDIENCE=${{ secrets.AUTH0_AUDIENCE }}" >> .env
+          echo "DRIVERS_MOCKUP_API_URL=${{ secrets.DRIVERS_MOCKUP_API_URL }}" >> .env
+          echo "DRIVERS_MOCKUP_API_KEY=${{ secrets.DRIVERS_MOCKUP_API_KEY }}" >> .env
           echo "PORT=${{ vars.PORT }}" >> .env
           echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
           echo "DB_USER=${{ secrets.DB_USER }}" >> .env
