@@ -41,6 +41,9 @@ class EnvironmentVariables {
 
   @IsString()
   DB_NAME: string;
+
+  @IsString()
+  GOOGLE_APPLICATION_CREDENTIALS: string;
 }
 
 export function validate(config: Record<string, unknown>) {

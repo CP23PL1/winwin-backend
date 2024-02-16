@@ -7,6 +7,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { Environment } from './config/env.validation';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { validationFailedExceptionFactory } from './shared/exceptions/validation-failed.exception';
+import multipart from '@fastify/multipart';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -51,6 +52,9 @@ async function bootstrap() {
   logger.debug(`Environment: ${ENV}`);
   logger.debug(`Api Version: ${API_VERSION}`);
 
+  await app.register(multipart, {
+    logLevel: 'debug',
+  });
   await app.listen(PORT, HOST);
 }
 bootstrap();
