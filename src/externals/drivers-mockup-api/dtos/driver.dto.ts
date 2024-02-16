@@ -1,3 +1,5 @@
+import { Vehicle } from './vehicle.dto';
+
 export class DriverDto {
   id: number;
   nationalId: string;
@@ -7,4 +9,5 @@ export class DriverDto {
   dateOfBirth: string;
   createdAt: string;
   updatedAt: string;
+  vehicle: Vehicle;
 }

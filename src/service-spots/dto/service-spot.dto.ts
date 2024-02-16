@@ -9,9 +9,6 @@ export class ServiceSpotDto {
   @ApiProperty()
   name: string;
 
-  @ApiProperty()
-  placeId: string;
-
   @ApiProperty({
     type: () => Coordinate,
   })

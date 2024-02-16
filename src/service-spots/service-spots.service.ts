@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { CreateServiceSpot } from './dto/create-service-spot.dto';
+import { CreateServiceSpot, CreateServiceSpotFiles } from './dto/create-service-spot.dto';
 import { UpdateServiceSpot } from './dto/update-service-spot.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ServiceSpot } from './entities/service-spot.entity';
 import { Repository } from 'typeorm';
 import { ServiceSpotDto } from './dto/service-spot.dto';
 import { AddressesService } from 'src/addresses/addresses.service';
+import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 
 @Injectable()
 export class ServiceSpotsService {
@@ -13,10 +14,23 @@ export class ServiceSpotsService {
     @InjectRepository(ServiceSpot)
     private readonly serviceSpotRepo: Repository<ServiceSpot>,
     private readonly addressesService: AddressesService,
+    @InjectFirebaseAdmin()
+    private readonly firebase: FirebaseAdmin,
   ) {}
 
-  create(data: CreateServiceSpot) {
-    return this.serviceSpotRepo.save(data);
+  create(data: CreateServiceSpot, files: CreateServiceSpotFiles) {
+    const bucket = this.firebase.storage.bucket();
+    const serviceSpot = this.serviceSpotRepo.create(data);
+    return this.serviceSpotRepo.manager.transaction(async (manager) => {
+      const newServiceSpot = await manager.save(serviceSpot, {
+        reload: true,
+      });
+      const path = `service-spots/${newServiceSpot.id}/images`;
+      await bucket
+        .file(`${path}/price_rate_image`)
+        .save(files.priceRateImage[0].buffer, { contentType: files.priceRateImage[0].mimetype });
+      return newServiceSpot;
+    });
   }
 
   findAll() {
@@ -59,7 +73,6 @@ export class ServiceSpotsService {
     return {
       id: serviceSpot.id,
       name: serviceSpot.name,
-      placeId: serviceSpot.placeId,
       coords: {
         lat: serviceSpot.coords.coordinates[1],
         lng: serviceSpot.coords.coordinates[0],

@@ -1,6 +1,6 @@
 import { ClassSerializerInterceptor, Module } from '@nestjs/common';
 
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { validate as envValidation } from './config/env.validation';
 import { ServiceSpotsModule } from './service-spots/service-spots.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
@@ -11,12 +11,20 @@ import { AddressesModule } from './addresses/addresses.module';
 import { DriversMockupApiModule } from './externals/drivers-mockup-api/drivers-mockup-api.module';
 import { DriversModule } from './drivers/drivers.module';
 import { AuthorizationModule } from './authorization/authorization.module';
+import { FirebaseModule } from 'nestjs-firebase';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       validate: envValidation,
+    }),
+    FirebaseModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        googleApplicationCredential: configService.get<string>('GOOGLE_APPLICATION_CREDENTIALS'),
+        storageBucket: configService.get<string>('FIREBASE_STORAGE_BUCKET'),
+      }),
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
     ServiceSpotsModule,

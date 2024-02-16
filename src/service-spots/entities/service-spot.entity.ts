@@ -35,9 +35,6 @@ export class ServiceSpot {
   @Index({ spatial: true })
   coords: Point;
 
-  @Column({ unique: true })
-  placeId: string;
-
   @Column({
     default: false,
   })

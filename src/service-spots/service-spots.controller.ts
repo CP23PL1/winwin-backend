@@ -9,15 +9,17 @@ import {
   Query,
   ParseIntPipe,
   NotFoundException,
-  ConflictException,
-  BadRequestException,
   Request,
+  UseInterceptors,
+  BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { ServiceSpotsService } from './service-spots.service';
-import { CreateServiceSpot } from './dto/create-service-spot.dto';
+import { CreateServiceSpot, CreateServiceSpotFiles } from './dto/create-service-spot.dto';
 import { UpdateServiceSpot } from './dto/update-service-spot.dto';
 import {
   ApiBearerAuth,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -27,6 +29,7 @@ import { ServiceSpotDto } from './dto/service-spot.dto';
 import { Public } from 'src/authorization/public.decorator';
 import { ServiceSpotQueryDto } from './dto/service-spot-query.dto';
 import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
+import { FileFieldsInterceptor, UploadedFiles } from '@blazity/nest-file-fastify';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
@@ -42,23 +45,28 @@ export class ServiceSpotsController {
     description: 'The record has been successfully created.',
     type: CreateServiceSpot,
   })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'priceRateImage', maxCount: 1 }]))
   @Post()
-  async create(@Request() req, @Body() data: CreateServiceSpot) {
+  async create(
+    @Request() req,
+    @Body() data: CreateServiceSpot,
+    @UploadedFiles()
+    files: CreateServiceSpotFiles,
+  ) {
     const driver = await this.driversMockupApi.getDriver(req.user.name, 'phone_number');
-
+    console.log(typeof data.serviceSpotOwnerId);
     if (driver.id !== data.serviceSpotOwnerId) {
       throw new BadRequestException('You can only create service spot for yourself');
     }
 
     try {
-      const newServiceSpot = await this.serviceSpotsService.create(data);
+      const newServiceSpot = await this.serviceSpotsService.create(data, files);
       return this.serviceSpotsService.mapToDto(newServiceSpot);
     } catch (error: any) {
       switch (error.code) {
         case '23505':
-          throw new ConflictException(
-            `Service spot with name ${data.name} or place id ${data.placeId} already exists`,
-          );
+          throw new ConflictException(`Service spot with name ${data.name}  already exists`);
         case '23503':
           throw new BadRequestException(`Sub district with id ${data.subDistrictId} not found`);
         default:
