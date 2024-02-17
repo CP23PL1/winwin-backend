@@ -5,10 +5,12 @@ import {
   Entity,
   Index,
   ManyToOne,
+  OneToMany,
   Point,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ServiceSpotHasDriver } from './service-spot-has-driver.entity';
 
 @Entity()
 export class ServiceSpot {
@@ -42,6 +44,9 @@ export class ServiceSpot {
 
   @Column({ unique: true })
   serviceSpotOwnerId: number;
+
+  @OneToMany(() => ServiceSpotHasDriver, (serviceSpotHasDriver) => serviceSpotHasDriver.serviceSpot)
+  serviceSpotHasDrivers: ServiceSpotHasDriver[];
 
   @CreateDateColumn()
   createdAt: Date;
