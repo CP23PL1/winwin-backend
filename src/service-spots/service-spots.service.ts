@@ -3,28 +3,38 @@ import { CreateServiceSpot, CreateServiceSpotFiles } from './dto/create-service-
 import { UpdateServiceSpot } from './dto/update-service-spot.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ServiceSpot } from './entities/service-spot.entity';
-import { Repository } from 'typeorm';
+import { FindOptionsSelect, Repository } from 'typeorm';
 import { ServiceSpotDto } from './dto/service-spot.dto';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
+import { ServiceSpotHasDriver } from './entities/service-spot-has-driver.entity';
+import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
 
 @Injectable()
 export class ServiceSpotsService {
   constructor(
     @InjectRepository(ServiceSpot)
     private readonly serviceSpotRepo: Repository<ServiceSpot>,
+    @InjectRepository(ServiceSpotHasDriver)
+    private readonly serviceSpotHasDriverRepo: Repository<ServiceSpotHasDriver>,
     private readonly addressesService: AddressesService,
+    private readonly driversMockupApi: DriversMockupApiService,
     @InjectFirebaseAdmin()
     private readonly firebase: FirebaseAdmin,
   ) {}
 
   create(data: CreateServiceSpot, files: CreateServiceSpotFiles) {
     const bucket = this.firebase.storage.bucket();
-    const serviceSpot = this.serviceSpotRepo.create(data);
     return this.serviceSpotRepo.manager.transaction(async (manager) => {
-      const newServiceSpot = await manager.save(serviceSpot, {
-        reload: true,
+      const newServiceSpot = this.serviceSpotRepo.create(data);
+      await manager.save(newServiceSpot);
+      const serviceSpotHasDriver = this.serviceSpotHasDriverRepo.create({
+        driverId: data.serviceSpotOwnerId,
+        serviceSpot: {
+          id: newServiceSpot.id,
+        },
       });
+      await manager.save(serviceSpotHasDriver);
       const path = `service-spots/${newServiceSpot.id}/images`;
       await bucket
         .file(`${path}/price_rate_image`)
@@ -54,8 +64,22 @@ export class ServiceSpotsService {
     return JSON.parse(formattedResult) as ServiceSpotDto[];
   }
 
+  async findDriverServiceSpotByDriverId(
+    driverId: number,
+    select: FindOptionsSelect<ServiceSpotHasDriver>,
+  ) {
+    const serviceSpotHasDriver = await this.serviceSpotHasDriverRepo.findOne({
+      where: { driverId },
+      select,
+      relations: {
+        serviceSpot: true,
+      },
+    });
+    return serviceSpotHasDriver.serviceSpot;
+  }
+
   findOne(id: number) {
-    return this.serviceSpotRepo.findOneBy({ id });
+    return this.serviceSpotRepo.findOne({ where: { id } });
   }
 
   update(id: number, data: UpdateServiceSpot) {
@@ -66,10 +90,26 @@ export class ServiceSpotsService {
     return this.serviceSpotRepo.delete({ id });
   }
 
+  getImageUrl(serviceSpotId: number, imageName: string) {
+    const bucket = this.firebase.storage.bucket();
+    return bucket
+      .file(`service-spots/${serviceSpotId}/images/${imageName}`)
+      .getSignedUrl({
+        action: 'read',
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // 1 week
+      })
+      .then((result) => result[0]);
+  }
+
   async mapToDto(serviceSpot: ServiceSpot): Promise<ServiceSpotDto> {
     const address = await this.addressesService.findOneAddressBySubDistrictId(
       serviceSpot.subDistrictId,
     );
+    const driver = await this.driversMockupApi.getDriver(
+      serviceSpot.serviceSpotOwnerId.toString(),
+      'id',
+    );
+    const priceRateImageUrl = await this.getImageUrl(serviceSpot.id, 'price_rate_image');
     return {
       id: serviceSpot.id,
       name: serviceSpot.name,
@@ -80,8 +120,9 @@ export class ServiceSpotsService {
       addressLine1: serviceSpot.addressLine1,
       addressLine2: serviceSpot.addressLine2,
       address,
-      serviceSpotOwnerId: serviceSpot.serviceSpotOwnerId,
+      serviceSpotOwner: driver,
       approved: serviceSpot.approved,
+      priceRateImageUrl,
     };
   }
 }

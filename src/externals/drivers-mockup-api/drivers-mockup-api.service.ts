@@ -8,7 +8,7 @@ import { DriverDto } from './dtos/driver.dto';
 export class DriversMockupApiService {
   constructor(private readonly http: HttpService) {}
 
-  async getDriver(identifier: string, identify_by: 'national_id' | 'phone_number') {
+  async getDriver(identifier: string, identify_by: 'national_id' | 'phone_number' | 'id') {
     const observable = this.http
       .get<DriverDto>(`/drivers/${identifier}`, { params: { identify_by } })
       .pipe(

@@ -12,16 +12,12 @@ import { DriversService } from './drivers.service';
 import { DriverVerifyDto } from './dtos/driver-verify.dto';
 import { Public } from 'src/authorization/public.decorator';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
 @Controller('drivers')
 export class DriversController {
-  constructor(
-    private readonly driversService: DriversService,
-    private readonly driversMockupService: DriversMockupApiService,
-  ) {}
+  constructor(private readonly driversService: DriversService) {}
 
   @Post('verify')
   @Public()
@@ -35,6 +31,6 @@ export class DriversController {
 
   @Get('me')
   getMyDriverInfo(@Req() req) {
-    return this.driversMockupService.getDriver(req.user.name, 'phone_number');
+    return this.driversService.getDriverInfoWithAdditionalData(req.user.name);
   }
 }

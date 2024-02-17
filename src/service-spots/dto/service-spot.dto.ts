@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Coordinate } from '../../shared/dtos/coordinate.dto';
 import { SubDistrict } from 'src/addresses/entities/sub-district.entity';
+import { DriverDto } from 'src/externals/drivers-mockup-api/dtos/driver.dto';
 
 export class ServiceSpotDto {
   @ApiProperty()
@@ -27,7 +28,10 @@ export class ServiceSpotDto {
   address: SubDistrict;
 
   @ApiProperty()
-  serviceSpotOwnerId: number;
+  serviceSpotOwner: DriverDto;
+
+  @ApiProperty()
+  priceRateImageUrl: string;
 
   @ApiPropertyOptional()
   distance?: number;
