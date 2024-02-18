@@ -12,6 +12,7 @@ import { DriversMockupApiModule } from './externals/drivers-mockup-api/drivers-m
 import { DriversModule } from './drivers/drivers.module';
 import { AuthorizationModule } from './authorization/authorization.module';
 import { FirebaseModule } from 'nestjs-firebase';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { FirebaseModule } from 'nestjs-firebase';
     DriversMockupApiModule,
     DriversModule,
     AuthorizationModule,
+    UsersModule,
   ],
   providers: [
     {
