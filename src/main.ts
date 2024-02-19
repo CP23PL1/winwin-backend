@@ -54,6 +54,9 @@ async function bootstrap() {
 
   await app.register(multipart, {
     logLevel: 'debug',
+    limits: {
+      fileSize: 5000000, // 5MB
+    },
   });
   await app.listen(PORT, HOST);
 }

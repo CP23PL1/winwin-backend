@@ -58,12 +58,8 @@ export class CreateServiceSpot {
 
   @ApiProperty({ format: 'binary' })
   priceRateImage: string;
-
-  @ApiProperty({ format: 'binary' })
-  serviceSpotImages: string[];
 }
 
 export class CreateServiceSpotFiles {
   priceRateImage: MemoryStorageFile[];
-  serviceSpotImages: MemoryStorageFile[];
 }
