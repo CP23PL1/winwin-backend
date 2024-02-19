@@ -14,5 +14,5 @@ export class DriverDto {
 }
 
 export class AdditionalDriverDto extends DriverDto {
-  serviceSpot: Pick<ServiceSpotDto, 'id' | 'name'>;
+  serviceSpot: Pick<ServiceSpotDto, 'id' | 'name'> | null;
 }

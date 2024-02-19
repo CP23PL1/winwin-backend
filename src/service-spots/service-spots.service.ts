@@ -75,6 +75,11 @@ export class ServiceSpotsService {
         serviceSpot: true,
       },
     });
+
+    if (!serviceSpotHasDriver) {
+      return null;
+    }
+
     return serviceSpotHasDriver.serviceSpot;
   }
 
