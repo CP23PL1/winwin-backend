@@ -2,11 +2,6 @@ name: CI/CD Pipeline
 
 on:
   workflow_dispatch:
-    inputs:
-      tags:
-        description: 'Tags to push and deploy'
-        required: true
-        default: '*.*.*'
   push:
     tags:
       - '*.*.*'
