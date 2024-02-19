@@ -1,9 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, Req } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { FindOneUserQueryDto } from './dtos/find-one-user-query.dto';
+import { FindOneUserQueryDto, UserIdentificationType } from './dtos/find-one-user-query.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -14,6 +14,11 @@ export class UsersController {
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
+  }
+
+  @Get('me')
+  getMyUserInfo(@Req() req) {
+    return this.usersService.findOne(req.user.name, UserIdentificationType.PHONE_NUMBER);
   }
 
   @Get(':identifier')
