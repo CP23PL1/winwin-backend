@@ -1,6 +1,12 @@
 name: CI/CD Pipeline
 
 on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Tags to push and deploy'
+        required: true
+        default: '*.*.*'
   push:
     tags:
       - '*.*.*'
@@ -84,6 +90,8 @@ jobs:
           echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
           echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}" >> .env
+          echo "GOOGLE_APPLICATION_CREDENTIALS=service-account.json" >> .env
           touch service-account.json
           echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 -d > service-account.json
 
