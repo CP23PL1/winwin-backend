@@ -61,7 +61,13 @@ export class ServiceSpotsService {
       .orderBy('distance', 'ASC')
       .getRawMany<ServiceSpot>();
     const formattedResult = JSON.stringify(result ?? []).replace(/serviceSpot_/g, '');
-    return JSON.parse(formattedResult) as ServiceSpotDto[];
+    return (JSON.parse(formattedResult) as ServiceSpot[]).map((serviceSpot) => ({
+      ...serviceSpot,
+      coords: {
+        lat: serviceSpot.coords.coordinates[1],
+        lng: serviceSpot.coords.coordinates[0],
+      },
+    }));
   }
 
   async findDriverServiceSpotByDriverId(
