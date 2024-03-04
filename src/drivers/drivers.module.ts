@@ -8,5 +8,6 @@ import { ServiceSpotsModule } from 'src/service-spots/service-spots.module';
   imports: [DriversMockupApiModule, ServiceSpotsModule],
   controllers: [DriversController],
   providers: [DriversService],
+  exports: [DriversService],
 })
 export class DriversModule {}

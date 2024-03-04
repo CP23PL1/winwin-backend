@@ -26,10 +26,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ServiceSpotDto } from './dto/service-spot.dto';
-import { Public } from 'src/authorization/public.decorator';
+import { Public } from 'src/authorization/decorators/public.decorator';
 import { ServiceSpotQueryDto } from './dto/service-spot-query.dto';
 import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
 import { FileFieldsInterceptor, UploadedFiles } from '@blazity/nest-file-fastify';
+import { FastifyRequest } from 'fastify';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
@@ -49,12 +50,12 @@ export class ServiceSpotsController {
   @UseInterceptors(FileFieldsInterceptor([{ name: 'priceRateImage', maxCount: 1 }]))
   @Post()
   async create(
-    @Request() req,
+    @Request() req: FastifyRequest,
     @Body() data: CreateServiceSpot,
     @UploadedFiles()
     files: CreateServiceSpotFiles,
   ) {
-    const driver = await this.driversMockupApi.getDriver(req.user.name, 'phone_number');
+    const driver = await this.driversMockupApi.getDriver(req.user.phoneNumber, 'phone_number');
     console.log(typeof data.serviceSpotOwnerId);
     if (driver.id !== data.serviceSpotOwnerId) {
       throw new BadRequestException('You can only create service spot for yourself');
