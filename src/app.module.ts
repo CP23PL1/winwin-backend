@@ -13,6 +13,7 @@ import { DriversModule } from './drivers/drivers.module';
 import { AuthorizationModule } from './authorization/authorization.module';
 import { FirebaseModule } from 'nestjs-firebase';
 import { UsersModule } from './users/users.module';
+import { DriveRequestsModule } from './drive-requests/drive-requests.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { UsersModule } from './users/users.module';
     DriversModule,
     AuthorizationModule,
     UsersModule,
+    DriveRequestsModule,
   ],
   providers: [
     {

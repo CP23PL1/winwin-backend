@@ -5,11 +5,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServiceSpot } from './entities/service-spot.entity';
 import { AddressesModule } from 'src/addresses/addresses.module';
 import { DriversMockupApiModule } from 'src/externals/drivers-mockup-api/drivers-mockup-api.module';
-import { ServiceSpotHasDriver } from './entities/service-spot-has-driver.entity';
+import { DriverHasServiceSpot } from './entities/service-spot-has-driver.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ServiceSpot, ServiceSpotHasDriver]),
+    TypeOrmModule.forFeature([ServiceSpot, DriverHasServiceSpot]),
     AddressesModule,
     DriversMockupApiModule,
   ],

@@ -14,6 +14,7 @@ import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FindOneUserQueryDto, UserIdentificationType } from './dtos/find-one-user-query.dto';
+import { FastifyRequest } from 'fastify';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -39,8 +40,8 @@ export class UsersController {
   }
 
   @Get('me')
-  getMyUserInfo(@Req() req) {
-    return this.usersService.findOne(req.user.name, UserIdentificationType.PHONE_NUMBER);
+  getMyUserInfo(@Req() req: FastifyRequest) {
+    return this.usersService.findOne(req.user.phoneNumber, UserIdentificationType.PHONE_NUMBER);
   }
 
   @Get(':identifier')

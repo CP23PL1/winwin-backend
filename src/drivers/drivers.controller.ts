@@ -10,8 +10,9 @@ import {
 } from '@nestjs/common';
 import { DriversService } from './drivers.service';
 import { DriverVerifyDto } from './dtos/driver-verify.dto';
-import { Public } from 'src/authorization/public.decorator';
+import { Public } from 'src/authorization/decorators/public.decorator';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { FastifyRequest } from 'fastify';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
@@ -30,7 +31,7 @@ export class DriversController {
   }
 
   @Get('me')
-  getMyDriverInfo(@Req() req) {
-    return this.driversService.getDriverInfoWithAdditionalData(req.user.name);
+  getMyDriverInfo(@Req() req: FastifyRequest) {
+    return this.driversService.getDriverInfoWithAdditionalData(req.user.phoneNumber);
   }
 }

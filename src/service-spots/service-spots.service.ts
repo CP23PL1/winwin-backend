@@ -7,16 +7,16 @@ import { FindOptionsSelect, Repository } from 'typeorm';
 import { ServiceSpotDto } from './dto/service-spot.dto';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { ServiceSpotHasDriver } from './entities/service-spot-has-driver.entity';
 import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
+import { DriverHasServiceSpot } from './entities/service-spot-has-driver.entity';
 
 @Injectable()
 export class ServiceSpotsService {
   constructor(
     @InjectRepository(ServiceSpot)
     private readonly serviceSpotRepo: Repository<ServiceSpot>,
-    @InjectRepository(ServiceSpotHasDriver)
-    private readonly serviceSpotHasDriverRepo: Repository<ServiceSpotHasDriver>,
+    @InjectRepository(DriverHasServiceSpot)
+    private readonly driverHasServiceSpotRepo: Repository<DriverHasServiceSpot>,
     private readonly addressesService: AddressesService,
     private readonly driversMockupApi: DriversMockupApiService,
     @InjectFirebaseAdmin()
@@ -28,7 +28,7 @@ export class ServiceSpotsService {
     return this.serviceSpotRepo.manager.transaction(async (manager) => {
       const newServiceSpot = this.serviceSpotRepo.create(data);
       await manager.save(newServiceSpot);
-      const serviceSpotHasDriver = this.serviceSpotHasDriverRepo.create({
+      const serviceSpotHasDriver = this.driverHasServiceSpotRepo.create({
         driverId: data.serviceSpotOwnerId,
         serviceSpot: {
           id: newServiceSpot.id,
@@ -72,9 +72,9 @@ export class ServiceSpotsService {
 
   async findDriverServiceSpotByDriverId(
     driverId: number,
-    select: FindOptionsSelect<ServiceSpotHasDriver>,
+    select: FindOptionsSelect<DriverHasServiceSpot>,
   ) {
-    const serviceSpotHasDriver = await this.serviceSpotHasDriverRepo.findOne({
+    const serviceSpotHasDriver = await this.driverHasServiceSpotRepo.findOne({
       where: { driverId },
       select,
       relations: {

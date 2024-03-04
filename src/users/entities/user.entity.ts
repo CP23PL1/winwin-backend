@@ -1,3 +1,4 @@
+import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
 import {
   Column,
   CreateDateColumn,
@@ -23,6 +24,9 @@ export class User {
 
   @Column()
   lastName: string;
+
+  @OneToMany(() => DriveRequest, (driveRequest) => driveRequest.user)
+  driveRequests: DriveRequest[];
 
   @CreateDateColumn()
   createdAt: Date;
