@@ -41,7 +41,7 @@ export class UsersController {
 
   @Get('me')
   getMyUserInfo(@Req() req: FastifyRequest) {
-    return this.usersService.findOne(req.user.phoneNumber, UserIdentificationType.PHONE_NUMBER);
+    return this.usersService.findOne(req.user.phone_number, UserIdentificationType.PHONE_NUMBER);
   }
 
   @Get(':identifier')

@@ -4,8 +4,9 @@ import {
   MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  WebSocketServer,
 } from '@nestjs/websockets';
-import { Socket } from 'socket.io';
+import { Socket, Server } from 'socket.io';
 import { DriveRequestsService } from './drive-requests.service';
 import { CreateDriveRequestDto } from './dto/create-drive-request.dto';
 import { UpdateDriveRequestDto } from './dto/update-drive-request.dto';
@@ -22,6 +23,9 @@ export class DriveRequestsGateway implements OnGatewayConnection, OnGatewayDisco
     private readonly driveRequestsService: DriveRequestsService,
     private readonly driversService: DriversService,
   ) {}
+
+  @WebSocketServer()
+  server: Server;
 
   async handleConnection(socket: Socket) {
     this.logger.debug(`Client connected: ${socket.id}`);
@@ -42,7 +46,9 @@ export class DriveRequestsGateway implements OnGatewayConnection, OnGatewayDisco
 
   @SubscribeMessage('drive-requests:create')
   create(@MessageBody() createDriveRequestDto: CreateDriveRequestDto) {
-    return this.driveRequestsService.create(createDriveRequestDto);
+    // return this.driveRequestsService.create(createDriveRequestDto);
+    console.log('requested');
+    this.server.emit('requested');
   }
 
   @SubscribeMessage('drive-requests:update')

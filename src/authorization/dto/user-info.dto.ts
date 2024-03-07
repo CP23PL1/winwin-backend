@@ -1,6 +1,6 @@
 export class UserInfoDto {
   name: string;
-  phoneNumber: string;
+  phone_number: string;
   nickname: string;
   sub: string;
   'cp23pl1/roles': Role[];
