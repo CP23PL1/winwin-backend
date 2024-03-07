@@ -55,7 +55,7 @@ export class ServiceSpotsController {
     @UploadedFiles()
     files: CreateServiceSpotFiles,
   ) {
-    const driver = await this.driversMockupApi.getDriver(req.user.phoneNumber, 'phone_number');
+    const driver = await this.driversMockupApi.getDriver(req.user.phone_number, 'phone_number');
     console.log(typeof data.serviceSpotOwnerId);
     if (driver.id !== data.serviceSpotOwnerId) {
       throw new BadRequestException('You can only create service spot for yourself');

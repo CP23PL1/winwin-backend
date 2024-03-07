@@ -32,6 +32,6 @@ export class DriversController {
 
   @Get('me')
   getMyDriverInfo(@Req() req: FastifyRequest) {
-    return this.driversService.getDriverInfoWithAdditionalData(req.user.phoneNumber);
+    return this.driversService.getDriverInfoWithAdditionalData(req.user.phone_number);
   }
 }
