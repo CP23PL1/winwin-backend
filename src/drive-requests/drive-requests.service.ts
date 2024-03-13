@@ -13,7 +13,7 @@ export class DriveRequestsService {
   ) {}
 
   create(createDriveRequestDto: CreateDriveRequestDto) {
-    return 'This action adds a new driveRequest';
+    return this.driveRequestRepository.save(createDriveRequestDto);
   }
 
   findAll() {

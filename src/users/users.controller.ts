@@ -8,6 +8,7 @@ import {
   Query,
   Req,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dtos/create-user.dto';
@@ -23,9 +24,9 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  async create(@Body() createUserDto: CreateUserDto) {
+  async create(@Req() req: FastifyRequest, @Body() createUserDto: CreateUserDto) {
     try {
-      const user = await this.usersService.create(createUserDto);
+      const user = await this.usersService.create(req.user.user_id, createUserDto);
       return user;
     } catch (error: any) {
       switch (error.code) {
@@ -40,8 +41,14 @@ export class UsersController {
   }
 
   @Get('me')
-  getMyUserInfo(@Req() req: FastifyRequest) {
-    return this.usersService.findOne(req.user.phone_number, UserIdentificationType.PHONE_NUMBER);
+  async getMyUserInfo(@Req() req: FastifyRequest) {
+    const user = await this.usersService.findOne(req.user.user_id, UserIdentificationType.ID);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    return user;
   }
 
   @Get(':identifier')
