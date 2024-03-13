@@ -1,10 +1,8 @@
 export class UserInfoDto {
-  name: string;
   phone_number: string;
-  nickname: string;
-  sub: string;
+  user_id: string;
+  connection: string;
   'cp23pl1/roles': Role[];
-  updatedAt: string;
 }
 
 export enum Role {

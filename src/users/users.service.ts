@@ -12,8 +12,11 @@ export class UsersService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
-  create(createUserDto: CreateUserDto) {
-    return this.userRepository.save(createUserDto);
+  create(userId: string, createUserDto: CreateUserDto) {
+    return this.userRepository.save({
+      id: userId,
+      ...createUserDto,
+    });
   }
 
   findOne(identifier: string | number, identifyBy: UserIdentificationType) {

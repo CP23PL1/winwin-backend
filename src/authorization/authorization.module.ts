@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
-import { Auth0JwtStrategy } from './auth0-jwt.strategy';
+import { Auth0JwtService } from './providers/auth0/auth0-jwt.service';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
-  providers: [Auth0JwtStrategy],
+  imports: [HttpModule],
+  providers: [Auth0JwtService],
+  exports: [Auth0JwtService],
 })
 export class AuthorizationModule {}

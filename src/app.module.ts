@@ -6,7 +6,7 @@ import { ServiceSpotsModule } from './service-spots/service-spots.module';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from './db/data-source';
-import { Auth0JwtGuard } from './authorization/auth0-jwt.guard';
+import { Auth0JwtGuard } from './authorization/providers/auth0/auth0-jwt.guard';
 import { AddressesModule } from './addresses/addresses.module';
 import { DriversMockupApiModule } from './externals/drivers-mockup-api/drivers-mockup-api.module';
 import { DriversModule } from './drivers/drivers.module';
@@ -14,6 +14,9 @@ import { AuthorizationModule } from './authorization/authorization.module';
 import { FirebaseModule } from 'nestjs-firebase';
 import { UsersModule } from './users/users.module';
 import { DriveRequestsModule } from './drive-requests/drive-requests.module';
+import { CacheModule } from '@nestjs/cache-manager';
+import type { RedisClientOptions } from 'redis';
+import { redisStore } from 'cache-manager-redis-yet';
 
 @Module({
   imports: [
@@ -26,6 +29,15 @@ import { DriveRequestsModule } from './drive-requests/drive-requests.module';
       useFactory: (configService: ConfigService) => ({
         googleApplicationCredential: configService.get<string>('GOOGLE_APPLICATION_CREDENTIALS'),
         storageBucket: configService.get<string>('FIREBASE_STORAGE_BUCKET'),
+      }),
+    }),
+    CacheModule.registerAsync<RedisClientOptions>({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        store: redisStore,
+        host: configService.get<string>('REDIS_HOST'),
+        port: configService.get<number>('REDIS_PORT'),
+        ttl: configService.get<number>('CACHE_TTL'),
       }),
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
