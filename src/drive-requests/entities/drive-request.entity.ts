@@ -28,14 +28,10 @@ export class DriveRequest {
 
   @Column()
   @Index()
-  userId: number;
+  userId: string;
 
   @ManyToOne(() => User, (user) => user.driveRequests, { eager: true, onDelete: 'CASCADE' })
   user: User;
-
-  @Column()
-  @Index()
-  driverId: number;
 
   @ManyToOne(
     () => DriverHasServiceSpot,
@@ -43,6 +39,7 @@ export class DriveRequest {
     { eager: true, onDelete: 'CASCADE' },
   )
   @JoinColumn({ name: 'driverId' })
+  @Index()
   driver: DriverHasServiceSpot;
 
   @Column({ type: 'jsonb' })
@@ -55,6 +52,7 @@ export class DriveRequest {
     type: 'enum',
     enum: DriveRequestStatus,
     enumName: 'drive_request_status',
+    default: DriveRequestStatus.PENDING,
   })
   status: DriveRequestStatus;
 

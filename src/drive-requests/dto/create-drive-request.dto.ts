@@ -1,6 +1,13 @@
-import { Coordinate } from 'src/shared/dtos/coordinate.dto';
+import { PlaceData } from '@googlemaps/google-maps-services-js';
 
 export class CreateDriveRequestDto {
-  origin: Coordinate;
-  destination: Coordinate;
+  origin: Pick<PlaceData, 'name' | 'geometry' | 'place_id'>;
+  destination: Pick<PlaceData, 'name' | 'geometry' | 'place_id'>;
+  route: {
+    duration: string;
+    distanceMeters: number;
+    polyline: {
+      encodedPolyline: string;
+    };
+  };
 }
