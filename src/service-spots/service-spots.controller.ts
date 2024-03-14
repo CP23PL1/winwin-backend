@@ -28,9 +28,9 @@ import {
 import { ServiceSpotDto } from './dto/service-spot.dto';
 import { Public } from 'src/authorization/decorators/public.decorator';
 import { ServiceSpotQueryDto } from './dto/service-spot-query.dto';
-import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
 import { FileFieldsInterceptor, UploadedFiles } from '@blazity/nest-file-fastify';
 import { FastifyRequest } from 'fastify';
+import { DriversService } from 'src/drivers/drivers.service';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
@@ -38,7 +38,7 @@ import { FastifyRequest } from 'fastify';
 export class ServiceSpotsController {
   constructor(
     private readonly serviceSpotsService: ServiceSpotsService,
-    private readonly driversMockupApi: DriversMockupApiService,
+    private readonly driversService: DriversService,
   ) {}
 
   // TODO: Fix dept
@@ -55,8 +55,9 @@ export class ServiceSpotsController {
     @UploadedFiles()
     files: CreateServiceSpotFiles,
   ) {
-    const driver = await this.driversMockupApi.getDriver(req.user.phone_number, 'phone_number');
-    console.log(typeof data.serviceSpotOwnerId);
+    const driver = await this.driversService.findOne(req.user.user_id);
+    console.log(data);
+    console.log(driver.id, data.serviceSpotOwnerId);
     if (driver.id !== data.serviceSpotOwnerId) {
       throw new BadRequestException('You can only create service spot for yourself');
     }

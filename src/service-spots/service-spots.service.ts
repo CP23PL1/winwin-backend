@@ -3,22 +3,19 @@ import { CreateServiceSpot, CreateServiceSpotFiles } from './dto/create-service-
 import { UpdateServiceSpot } from './dto/update-service-spot.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ServiceSpot } from './entities/service-spot.entity';
-import { FindOptionsSelect, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ServiceSpotDto } from './dto/service-spot.dto';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
-import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
-import { DriverHasServiceSpot } from './entities/service-spot-has-driver.entity';
+import { DriversService } from 'src/drivers/drivers.service';
 
 @Injectable()
 export class ServiceSpotsService {
   constructor(
     @InjectRepository(ServiceSpot)
     private readonly serviceSpotRepo: Repository<ServiceSpot>,
-    @InjectRepository(DriverHasServiceSpot)
-    private readonly driverHasServiceSpotRepo: Repository<DriverHasServiceSpot>,
+    private readonly driversService: DriversService,
     private readonly addressesService: AddressesService,
-    private readonly driversMockupApi: DriversMockupApiService,
     @InjectFirebaseAdmin()
     private readonly firebase: FirebaseAdmin,
   ) {}
@@ -28,13 +25,6 @@ export class ServiceSpotsService {
     return this.serviceSpotRepo.manager.transaction(async (manager) => {
       const newServiceSpot = this.serviceSpotRepo.create(data);
       await manager.save(newServiceSpot);
-      const serviceSpotHasDriver = this.driverHasServiceSpotRepo.create({
-        driverId: data.serviceSpotOwnerId,
-        serviceSpot: {
-          id: newServiceSpot.id,
-        },
-      });
-      await manager.save(serviceSpotHasDriver);
       const path = `service-spots/${newServiceSpot.id}/images`;
       await bucket
         .file(`${path}/price_rate_image`)
@@ -70,25 +60,6 @@ export class ServiceSpotsService {
     }));
   }
 
-  async findDriverServiceSpotByDriverId(
-    driverId: number,
-    select: FindOptionsSelect<DriverHasServiceSpot>,
-  ) {
-    const serviceSpotHasDriver = await this.driverHasServiceSpotRepo.findOne({
-      where: { driverId },
-      select,
-      relations: {
-        serviceSpot: true,
-      },
-    });
-
-    if (!serviceSpotHasDriver) {
-      return null;
-    }
-
-    return serviceSpotHasDriver.serviceSpot;
-  }
-
   findOne(id: number) {
     return this.serviceSpotRepo.findOne({ where: { id } });
   }
@@ -116,10 +87,7 @@ export class ServiceSpotsService {
     const address = await this.addressesService.findOneAddressBySubDistrictId(
       serviceSpot.subDistrictId,
     );
-    const driver = await this.driversMockupApi.getDriver(
-      serviceSpot.serviceSpotOwnerId.toString(),
-      'id',
-    );
+    const driver = await this.driversService.findOne(serviceSpot.serviceSpotOwnerId);
     const priceRateImageUrl = await this.getImageUrl(serviceSpot.id, 'price_rate_image');
     return {
       id: serviceSpot.id,

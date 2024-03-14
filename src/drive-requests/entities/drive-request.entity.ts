@@ -1,4 +1,4 @@
-import { DriverHasServiceSpot } from 'src/service-spots/entities/service-spot-has-driver.entity';
+import { Driver } from 'src/drivers/entities/driver.entity';
 import { Coordinate } from 'src/shared/dtos/coordinate.dto';
 import { User } from 'src/users/entities/user.entity';
 import {
@@ -6,7 +6,6 @@ import {
   CreateDateColumn,
   Entity,
   Index,
-  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -27,20 +26,18 @@ export class DriveRequest {
   id: number;
 
   @Column()
-  @Index()
   userId: string;
 
   @ManyToOne(() => User, (user) => user.driveRequests, { eager: true, onDelete: 'CASCADE' })
+  @Index()
   user: User;
 
-  @ManyToOne(
-    () => DriverHasServiceSpot,
-    (driverHasServiceSpot) => driverHasServiceSpot.driveRequests,
-    { eager: true, onDelete: 'CASCADE' },
-  )
-  @JoinColumn({ name: 'driverId' })
+  @Column()
+  driverId: string;
+
+  @ManyToOne(() => Driver, (driver) => driver.driveRequests, { eager: true, onDelete: 'CASCADE' })
   @Index()
-  driver: DriverHasServiceSpot;
+  driver: Driver;
 
   @Column({ type: 'jsonb' })
   origin: Coordinate;

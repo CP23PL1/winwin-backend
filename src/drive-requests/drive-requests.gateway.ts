@@ -20,10 +20,10 @@ import { auth0JwtSocketIoMiddleware } from 'src/authorization/providers/auth0/au
 import { UsersService } from 'src/users/users.service';
 import { UserIdentificationType } from 'src/users/dtos/find-one-user-query.dto';
 import { ConfigService } from '@nestjs/config';
-import { AdditionalDriverDto } from 'src/externals/drivers-mockup-api/dtos/driver.dto';
 import { ServiceSpotsService } from 'src/service-spots/service-spots.service';
 import * as moment from 'moment';
 import { UpdateDriveRequestDto } from './dto/update-drive-request.dto';
+import { DriverDto } from 'src/drivers/dtos/driver.dto';
 
 @WebSocketGateway({
   namespace: 'drive-requests',
@@ -111,9 +111,7 @@ export class DriveRequestsGateway
         continue;
       }
 
-      const driver = await this.driversService.getDriverInfoWithAdditionalData(
-        driverSocket.data.user.phone_number,
-      );
+      const driver = await this.driversService.findOne(driverSocket.data.user.user_id);
       const date = moment();
       const newDriveRequest = await this.driveRequestsService.create({
         user,
@@ -143,23 +141,11 @@ export class DriveRequestsGateway
     return;
   }
 
-  // @SubscribeMessage('drive-requests:update')
-  // update(@MessageBody() updateDriveRequestDto: UpdateDriveRequestDto) {
-  //   return this.driveRequestsService.update(updateDriveRequestDto.id, updateDriveRequestDto);
-  // }
-
-  // @SubscribeMessage('drive-requests:cancel')
-  // remove(@MessageBody() id: number) {
-  //   return this.driveRequestsService.remove(id);
-  // }
-
   private async handleDriverConnection(socket: Socket) {
     this.logger.debug(`Driver connected: ${socket.data.user.user_id}`);
-    let driver: AdditionalDriverDto | null = null;
+    let driver: DriverDto | null = null;
     try {
-      driver = await this.driversService.getDriverInfoWithAdditionalData(
-        socket.data.user.phone_number,
-      );
+      driver = await this.driversService.findOne(socket.data.user.user_id);
     } catch (error: any) {
       throw this.rejectUnauthorizedClient(socket, 'An error occurred getting driver info');
     }

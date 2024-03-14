@@ -1,36 +1,36 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
-import { AdditionalDriverDto } from 'src/externals/drivers-mockup-api/dtos/driver.dto';
-import { ServiceSpotsService } from 'src/service-spots/service-spots.service';
+import { Driver } from './entities/driver.entity';
+import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
+import { DriverDto } from './dtos/driver.dto';
+import { CreateDriverDto } from './dtos/create-driver.dto';
 
 @Injectable()
 export class DriversService {
   constructor(
-    private readonly serviceSpotsService: ServiceSpotsService,
+    @InjectRepository(Driver)
+    private readonly driverRepository: Repository<Driver>,
     private readonly driversMockupApi: DriversMockupApiService,
   ) {}
 
-  verify(phoneNumber: string) {
-    return this.driversMockupApi.getDriver(phoneNumber, 'phone_number');
-  }
-
-  async getDriverInfoWithAdditionalData(phoneNumber: string): Promise<AdditionalDriverDto> {
-    const driver = await this.driversMockupApi.getDriver(phoneNumber, 'phone_number');
-
+  async findOne(id: string): Promise<DriverDto> {
+    const driver = await this.driverRepository.findOne({ where: { id } });
     if (!driver) {
       return null;
     }
-
-    const serviceSpot = await this.serviceSpotsService.findDriverServiceSpotByDriverId(driver.id, {
-      serviceSpot: {
-        id: true,
-        name: true,
-      },
-    });
-
+    const driverInfo = await this.driversMockupApi.getDriver(driver.phoneNumber, 'phone_number');
     return {
       ...driver,
-      serviceSpot,
+      info: driverInfo,
     };
+  }
+
+  async findOneBy(where: FindOptionsWhere<Driver>) {
+    return this.driverRepository.findOne({ where });
+  }
+
+  async create(data: CreateDriverDto) {
+    return this.driverRepository.save(data);
   }
 }
