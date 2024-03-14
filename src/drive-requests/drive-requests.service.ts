@@ -1,11 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { CreateDriveRequestDto } from './dto/create-drive-request.dto';
-import { UpdateDriveRequestDto } from './dto/update-drive-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DriveRequest } from './entities/drive-request.entity';
 import { DeepPartial, Repository } from 'typeorm';
-import { AdditionalDriverDto } from 'src/externals/drivers-mockup-api/dtos/driver.dto';
-import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class DriveRequestsService {

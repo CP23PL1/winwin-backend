@@ -48,13 +48,10 @@ export class CreateServiceSpot {
   coords: Point;
 
   @ApiProperty({
-    example: 1,
-    description: 'Driver ID of the service spot owner',
+    description: 'Driver ID (uid) of the service spot owner',
   })
-  @Transform(({ value }) => parseInt(value))
-  @IsPositive()
   @IsNotEmpty()
-  serviceSpotOwnerId: number;
+  serviceSpotOwnerId: string;
 
   @ApiProperty({ format: 'binary' })
   priceRateImage: string;

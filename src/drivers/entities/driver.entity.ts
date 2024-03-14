@@ -1,4 +1,5 @@
 import {
+  Column,
   CreateDateColumn,
   Entity,
   Index,
@@ -7,17 +8,21 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ServiceSpot } from './service-spot.entity';
+import { ServiceSpot } from '../../service-spots/entities/service-spot.entity';
 import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
 
 @Entity()
-export class DriverHasServiceSpot {
+export class Driver {
   @PrimaryColumn()
-  driverId: number;
+  id: string;
 
-  @ManyToOne(() => ServiceSpot, (serviceSpot) => serviceSpot.id, {
+  @Column({ unique: true })
+  phoneNumber: string;
+
+  @ManyToOne(() => ServiceSpot, (serviceSpot) => serviceSpot.serviceSpotOwner, {
     onDelete: 'CASCADE',
     onUpdate: 'CASCADE',
+    eager: true,
   })
   @Index()
   serviceSpot: ServiceSpot;

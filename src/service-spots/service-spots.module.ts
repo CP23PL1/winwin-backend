@@ -4,15 +4,10 @@ import { ServiceSpotsController } from './service-spots.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ServiceSpot } from './entities/service-spot.entity';
 import { AddressesModule } from 'src/addresses/addresses.module';
-import { DriversMockupApiModule } from 'src/externals/drivers-mockup-api/drivers-mockup-api.module';
-import { DriverHasServiceSpot } from './entities/service-spot-has-driver.entity';
+import { DriversModule } from 'src/drivers/drivers.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([ServiceSpot, DriverHasServiceSpot]),
-    AddressesModule,
-    DriversMockupApiModule,
-  ],
+  imports: [TypeOrmModule.forFeature([ServiceSpot]), DriversModule, AddressesModule],
   controllers: [ServiceSpotsController],
   providers: [ServiceSpotsService],
   exports: [ServiceSpotsService],

@@ -11,7 +11,7 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
-import { DriverHasServiceSpot } from './service-spot-has-driver.entity';
+import { Driver } from '../../drivers/entities/driver.entity';
 
 @Entity()
 export class ServiceSpot {
@@ -43,11 +43,15 @@ export class ServiceSpot {
   })
   approved: boolean;
 
-  @Column({ unique: true })
-  serviceSpotOwnerId: number;
+  @ManyToOne(() => Driver, (driver) => driver.serviceSpot, { onDelete: 'CASCADE' })
+  @Index()
+  serviceSpotOwner: Driver;
 
-  @OneToMany(() => DriverHasServiceSpot, (serviceSpotHasDriver) => serviceSpotHasDriver.serviceSpot)
-  drivers: DriverHasServiceSpot[];
+  @Column()
+  serviceSpotOwnerId: string;
+
+  @OneToMany(() => Driver, (serviceSpotHasDriver) => serviceSpotHasDriver.serviceSpot)
+  drivers: Driver[];
 
   @OneToMany(() => DriveRequest, (driveRequest) => driveRequest.driver)
   driveRequests: DriveRequest[];

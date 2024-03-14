@@ -1,7 +1,6 @@
-import { ServiceSpotDto } from 'src/service-spots/dto/service-spot.dto';
 import { Vehicle } from './vehicle.dto';
 
-export class DriverDto {
+export class DriverInfoDto {
   id: number;
   nationalId: string;
   firstName: string;
@@ -10,9 +9,6 @@ export class DriverDto {
   dateOfBirth: string;
   createdAt: string;
   updatedAt: string;
+  profileImage: string;
   vehicle: Vehicle;
-}
-
-export class AdditionalDriverDto extends DriverDto {
-  serviceSpot: Pick<ServiceSpotDto, 'id' | 'name'> | null;
 }
