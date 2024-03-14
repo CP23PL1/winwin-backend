@@ -3,7 +3,9 @@ import { CreateDriveRequestDto } from './dto/create-drive-request.dto';
 import { UpdateDriveRequestDto } from './dto/update-drive-request.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DriveRequest } from './entities/drive-request.entity';
-import { Repository } from 'typeorm';
+import { DeepPartial, Repository } from 'typeorm';
+import { AdditionalDriverDto } from 'src/externals/drivers-mockup-api/dtos/driver.dto';
+import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class DriveRequestsService {
@@ -12,8 +14,8 @@ export class DriveRequestsService {
     private driveRequestRepository: Repository<DriveRequest>,
   ) {}
 
-  create(createDriveRequestDto: CreateDriveRequestDto) {
-    return this.driveRequestRepository.save(createDriveRequestDto);
+  create(data: DeepPartial<DriveRequest>) {
+    return this.driveRequestRepository.save(data);
   }
 
   findAll() {
@@ -24,8 +26,8 @@ export class DriveRequestsService {
     return `This action returns a #${id} driveRequest`;
   }
 
-  update(id: number, updateDriveRequestDto: UpdateDriveRequestDto) {
-    return `This action updates a #${id} driveRequest`;
+  update(id: number, data: DeepPartial<DriveRequest>) {
+    return this.driveRequestRepository.save({ id, ...data });
   }
 
   remove(id: number) {

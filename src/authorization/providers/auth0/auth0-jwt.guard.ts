@@ -18,6 +18,10 @@ export class Auth0JwtGuard implements CanActivate {
     if (isPublic) return true;
 
     const request = context.switchToHttp().getRequest();
+    if (!request.headers?.authorization) {
+      throw new UnauthorizedException('You must provide a valid bearer token');
+    }
+
     const [type, token] = request.headers?.authorization?.split(' ');
 
     if (type.toLowerCase() !== 'bearer') {
