@@ -21,14 +21,14 @@ import { UserIdentificationType } from 'src/users/dtos/find-one-user-query.dto';
 import { ConfigService } from '@nestjs/config';
 import { ServiceSpotsService } from 'src/service-spots/service-spots.service';
 import * as moment from 'moment';
-import { UpdateDriveRequestDto } from './dto/update-drive-request.dto';
 import { DriverDto } from 'src/drivers/dtos/driver.dto';
 import { DriveRequestChatDto } from './dto/drive-request-chat.dto';
 import { AllExceptionsFilter } from 'src/shared/filters/all-ws-exception.filter';
-import { WsAck } from 'src/shared/dtos/ws-ack.dto';
-import { WsErrorAck } from 'src/shared/dtos/ws-error-ack.dt';
-import { DriveRequest, DriveRequestStatus } from './entities/drive-request.entity';
+
+import { DriveRequestStatus } from './entities/drive-request.entity';
 import { CreateDriveRequestDto } from './dto/create-drive-request.dto';
+import { User } from 'src/users/entities/user.entity';
+import { Coordinate } from 'src/shared/dtos/coordinate.dto';
 
 @UseFilters(new AllExceptionsFilter())
 @WebSocketGateway({
@@ -85,11 +85,92 @@ export class DriveRequestsGateway
       passengerSocket.data.user.user_id,
       UserIdentificationType.ID,
     );
+
+    if (!user) {
+      throw new WsException('You are not authorized to perform this action');
+    }
+
+    const hostRoom = this.getDriveRequestHostRoom(user);
+
+    if (!passengerSocket.rooms.has(hostRoom)) {
+      passengerSocket.join(hostRoom);
+    }
+
     const { origin, destination, route } = requestDriveDto;
 
+    const driverSocket = await this.findDriverSocketToOfferJob(user, origin.geometry.location);
+
+    const payload: CreateDriveRequestDto = {
+      user,
+      origin: origin.geometry.location,
+      destination: destination.geometry.location,
+      route,
+    };
+
+    this.server.to(driverSocket.data.user.user_id).emit('job-offer', payload);
+  }
+
+  @SubscribeMessage('accept-drive-request')
+  async acceptedRequest(
+    @ConnectedSocket() driverSocket: Socket,
+    @MessageBody() data: CreateDriveRequestDto,
+  ) {
+    const driver = await this.driversService.findOne(driverSocket.data.user.user_id);
+    const user = await this.usersService.findOne(data.user.id, UserIdentificationType.ID);
+    const date = moment();
+    const newDriveRequest = await this.driveRequestsService.create({
+      user,
+      driver,
+      origin: data.origin,
+      destination: data.destination,
+      status: DriveRequestStatus.ACCEPTED,
+      refCode: `DR${date.format('YYYYMMDDHHmmss')}`,
+    });
+    const hostRoom = this.getDriveRequestHostRoom(user);
+    driverSocket.join(hostRoom);
+
+    this.server.to(hostRoom).emit('drive-request-created', {
+      ...newDriveRequest,
+      route: data.route,
+    });
+  }
+
+  @SubscribeMessage('reject-drive-request')
+  async rejectRequest(
+    @ConnectedSocket() driverSocket: Socket,
+    @MessageBody() data: CreateDriveRequestDto,
+  ) {
+    // Cooldown driver for 5 minutes before they can get another job offer
+    driverSocket.data.cooldown = moment().add(5, 'minutes').toISOString();
+
+    try {
+      const newDriverSocket = await this.findDriverSocketToOfferJob(data.user, data.origin);
+      this.server.to(newDriverSocket.id).emit('job-offer', data);
+    } catch (error: unknown) {
+      const hostRoom = this.getDriveRequestHostRoom(data.user);
+      this.server.to(hostRoom).emit('drive-request-rejected', data);
+    }
+  }
+
+  @SubscribeMessage('chat-message')
+  async chat(@ConnectedSocket() client: Socket, @MessageBody() data: DriveRequestChatDto) {
+    const room = `drive-requests:${data.driveRequestId}`;
+    this.server.fetchSockets().then((sockets) => {
+      sockets.forEach((socket) => {
+        console.log(socket.rooms);
+      });
+    });
+    this.server.to(room).except(client.id).emit('drive-requests:chat', {
+      sender: client.data.user.user_id,
+      message: data.message,
+      timestamp: new Date(),
+    });
+  }
+
+  private async findDriverSocketToOfferJob(user: User, origin: Coordinate) {
     const nearbyServiceSpots = await this.serviceSpotsService.findAllByDistance(
-      origin.geometry.location.lat,
-      origin.geometry.location.lng,
+      origin.lat,
+      origin.lng,
       2000,
     );
 
@@ -114,7 +195,7 @@ export class DriveRequestsGateway
         }
         return moment(socket.data.cooldown).isBefore(moment());
       });
-      console.log(driverSockets.length);
+
       const rnd = crypto.getRandomValues(new Uint32Array(1))[0];
       const rndDriverSocket = driverSockets[rnd % driverSockets.length];
 
@@ -129,87 +210,11 @@ export class DriveRequestsGateway
       throw new WsException('No nearby driver found');
     }
 
-    const payload: CreateDriveRequestDto = {
-      user,
-      origin: origin.geometry.location,
-      destination: destination.geometry.location,
-      route,
-    };
-
-    const room = `/users/${user.id}/drive-request`;
-
-    if (!passengerSocket.rooms.has(room)) {
-      passengerSocket.join(room);
-    }
-
-    this.server.to(room).to(driverSocket.data.user.user_id).emit('drive-requested', payload);
+    return driverSocket;
   }
 
-  @SubscribeMessage('accept-drive-request')
-  async acceptedRequest(
-    @ConnectedSocket() driverSocket: Socket,
-    @MessageBody() data: CreateDriveRequestDto,
-  ) {
-    const driver = await this.driversService.findOne(driverSocket.data.user.user_id);
-    const user = await this.usersService.findOne(data.user.id, UserIdentificationType.ID);
-    const date = moment();
-    const newDriveRequest = await this.driveRequestsService.create({
-      user,
-      driver,
-      origin: data.origin,
-      destination: data.destination,
-      status: DriveRequestStatus.ACCEPTED,
-      refCode: `DR${date.format('YYYYMMDDHHmmss')}`,
-    });
-    console.log(newDriveRequest);
-    const room = `/users/${user.id}/drive-request`;
-    driverSocket.join(room);
-
-    this.server.to(room).emit('drive-requested', {
-      ...newDriveRequest,
-      route: data.route,
-    });
-  }
-
-  @SubscribeMessage('reject-drive-request')
-  async rejectRequest(
-    @ConnectedSocket() driverSocket: Socket,
-    @MessageBody() data: CreateDriveRequestDto,
-  ) {
-    const room = `/users/${data.user.id}/drive-request`;
-    driverSocket.leave(room);
-    driverSocket.data.cooldown = moment().add(5, 'minutes').toISOString();
-    const roomSockets = await this.server.in(room).fetchSockets();
-    const passengerSocket = roomSockets[0];
-    passengerSocket.emit('drive-request-rejected');
-  }
-
-  @SubscribeMessage('chat-message')
-  async chat(@ConnectedSocket() client: Socket, @MessageBody() data: DriveRequestChatDto) {
-    const room = `drive-requests:${data.driveRequestId}`;
-    this.server.fetchSockets().then((sockets) => {
-      sockets.forEach((socket) => {
-        console.log(socket.rooms);
-      });
-    });
-    this.server.to(room).except(client.id).emit('drive-requests:chat', {
-      sender: client.data.user.user_id,
-      message: data.message,
-      timestamp: new Date(),
-    });
-  }
-
-  // @SubscribeMessage('drive-requests:update')
-  // async updateStatus(@MessageBody() data: UpdateDriveRequestDto) {
-  //   const updatedDriveRequest = await this.driveRequestsService.update(data.id, {
-  //     status: data.status,
-  //   });
-  //   this.server.in(`drive-requests:${data.id}`).emit('drive-requests:updated', updatedDriveRequest);
-  //   return;
-  // }
-
-  private getDriveRequestRoom(driveRequest: DriveRequest) {
-    return `drive-requests:${driveRequest.id}`;
+  private getDriveRequestHostRoom(user: User) {
+    return `/users/${user.id}/drive-request`;
   }
 
   private async handleDriverConnection(socket: Socket) {
