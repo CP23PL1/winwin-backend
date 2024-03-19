@@ -31,6 +31,7 @@ export class DriversService {
   }
 
   async create(data: CreateDriverDto) {
-    return this.driverRepository.save(data);
+    const newDriver = await this.driverRepository.save(data);
+    return this.findOne(newDriver.id);
   }
 }
