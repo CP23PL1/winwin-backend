@@ -1,8 +1,10 @@
-import { PlaceData } from '@googlemaps/google-maps-services-js';
+import { Coordinate } from 'src/shared/dtos/coordinate.dto';
+import { User } from 'src/users/entities/user.entity';
 
 export class CreateDriveRequestDto {
-  origin: Pick<PlaceData, 'name' | 'geometry' | 'place_id'>;
-  destination: Pick<PlaceData, 'name' | 'geometry' | 'place_id'>;
+  user: User;
+  origin: Coordinate;
+  destination: Coordinate;
   route: {
     duration: string;
     distanceMeters: number;
