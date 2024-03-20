@@ -2,7 +2,7 @@ import { IsNotEmpty, IsPositive, IsString } from 'class-validator';
 
 export class DriveRequestChatDto {
   @IsPositive()
-  driveRequestId: number;
+  to: string;
 
   @IsString()
   @IsNotEmpty()

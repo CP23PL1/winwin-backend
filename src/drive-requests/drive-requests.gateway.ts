@@ -32,12 +32,13 @@ import { Coordinate } from 'src/shared/dtos/coordinate.dto';
 
 @UseFilters(new AllExceptionsFilter())
 @WebSocketGateway({
-  namespace: 'drive-requests',
+  namespace: 'drive-request',
 })
 export class DriveRequestsGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
 {
   private readonly logger = new Logger(DriveRequestsGateway.name);
+
   constructor(
     private readonly configService: ConfigService,
     private readonly auth0JwtService: Auth0JwtService,
@@ -90,7 +91,7 @@ export class DriveRequestsGateway
       throw new WsException('You are not authorized to perform this action');
     }
 
-    const hostRoom = this.getDriveRequestHostRoom(user);
+    const hostRoom = this.getDriveRequestHostRoom(user.id);
 
     if (!passengerSocket.rooms.has(hostRoom)) {
       passengerSocket.join(hostRoom);
@@ -126,7 +127,7 @@ export class DriveRequestsGateway
       status: DriveRequestStatus.ACCEPTED,
       refCode: `DR${date.format('YYYYMMDDHHmmss')}`,
     });
-    const hostRoom = this.getDriveRequestHostRoom(user);
+    const hostRoom = this.getDriveRequestHostRoom(user.id);
     driverSocket.join(hostRoom);
 
     this.server.to(hostRoom).emit('drive-request-created', {
@@ -147,20 +148,15 @@ export class DriveRequestsGateway
       const newDriverSocket = await this.findDriverSocketToOfferJob(data.user, data.origin);
       this.server.to(newDriverSocket.id).emit('job-offer', data);
     } catch (error: unknown) {
-      const hostRoom = this.getDriveRequestHostRoom(data.user);
+      const hostRoom = this.getDriveRequestHostRoom(data.user.id);
       this.server.to(hostRoom).emit('drive-request-rejected', data);
     }
   }
 
   @SubscribeMessage('chat-message')
-  async chat(@ConnectedSocket() client: Socket, @MessageBody() data: DriveRequestChatDto) {
-    const room = `drive-requests:${data.driveRequestId}`;
-    this.server.fetchSockets().then((sockets) => {
-      sockets.forEach((socket) => {
-        console.log(socket.rooms);
-      });
-    });
-    this.server.to(room).except(client.id).emit('drive-requests:chat', {
+  async chatMessage(@ConnectedSocket() client: Socket, @MessageBody() data: DriveRequestChatDto) {
+    const hostRoom = this.getDriveRequestHostRoom(data.to);
+    this.server.to(hostRoom).emit('chat-message-received', {
       sender: client.data.user.user_id,
       message: data.message,
       timestamp: new Date(),
@@ -181,13 +177,8 @@ export class DriveRequestsGateway
     let driverSocket: RemoteSocket<any, any> | null = null;
 
     for (const nearbyServiceSpot of nearbyServiceSpots) {
-      let driverSockets = await this.server
-        .in(`service-spots:${nearbyServiceSpot.id}`)
-        .fetchSockets();
-
-      if (driverSockets.length <= 0) {
-        continue;
-      }
+      const serviceSpotRoom = this.getServiceSpotRoom(nearbyServiceSpot.id);
+      let driverSockets = await this.server.in(serviceSpotRoom).fetchSockets();
 
       driverSockets = driverSockets.filter((socket) => {
         if (!socket.data.cooldown) {
@@ -195,6 +186,10 @@ export class DriveRequestsGateway
         }
         return moment(socket.data.cooldown).isBefore(moment());
       });
+
+      if (driverSockets.length <= 0) {
+        continue;
+      }
 
       const rnd = crypto.getRandomValues(new Uint32Array(1))[0];
       const rndDriverSocket = driverSockets[rnd % driverSockets.length];
@@ -207,18 +202,21 @@ export class DriveRequestsGateway
     }
 
     if (!driverSocket) {
-      throw new WsException('No nearby driver found');
+      throw new WsException('No drive available at the moment. Please try again later.');
     }
 
     return driverSocket;
   }
 
-  private getDriveRequestHostRoom(user: User) {
-    return `/users/${user.id}/drive-request`;
+  private getDriveRequestHostRoom(userId: string) {
+    return `/users/${userId}/drive-request`;
+  }
+
+  private getServiceSpotRoom(serviceSpotId: number) {
+    return `service-spots:${serviceSpotId}`;
   }
 
   private async handleDriverConnection(socket: Socket) {
-    this.logger.debug(`Driver connected: ${socket.data.user.user_id}`);
     let driver: DriverDto | null = null;
     try {
       driver = await this.driversService.findOne(socket.data.user.user_id);
@@ -228,8 +226,11 @@ export class DriveRequestsGateway
     if (!driver.serviceSpot) {
       throw this.rejectUnauthorizedClient(socket, 'Driver does not have a service spot');
     }
-    const serviceSpotRoom = `service-spots:${driver.serviceSpot.id}`;
+    const serviceSpotRoom = this.getServiceSpotRoom(driver.serviceSpot.id);
     socket.join(serviceSpotRoom);
+    this.logger.debug(
+      `Driver connected: ${socket.data.user.user_id} and joined ${serviceSpotRoom}`,
+    );
   }
 
   private handlePassengerConnection(socket: Socket) {
