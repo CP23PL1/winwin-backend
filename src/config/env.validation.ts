@@ -1,5 +1,13 @@
 import { plainToInstance } from 'class-transformer';
-import { IsEnum, IsNumber, IsOptional, IsSemVer, IsString, validateSync } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsSemVer,
+  IsString,
+  IsUrl,
+  validateSync,
+} from 'class-validator';
 
 export enum Environment {
   Development = 'development',
@@ -43,7 +51,29 @@ class EnvironmentVariables {
   DB_NAME: string;
 
   @IsString()
+  DRIVERS_MOCKUP_API_URL: string;
+
+  @IsString()
+  DRIVERS_MOCKUP_API_KEY: string;
+
+  @IsString()
   GOOGLE_APPLICATION_CREDENTIALS: string;
+
+  @IsString()
+  @IsUrl({ protocols: ['gs'] })
+  FIREBASE_STORAGE_BUCKET: string;
+
+  @IsString()
+  REDIS_HOST: string;
+
+  @IsNumber()
+  REDIS_PORT: number;
+
+  @IsString()
+  DRIVER_APP_AUTH0_CLIENT_ID: string;
+
+  @IsString()
+  PASSENGER_APP_AUTH0_CLIENT_ID: string;
 }
 
 export function validate(config: Record<string, unknown>) {
