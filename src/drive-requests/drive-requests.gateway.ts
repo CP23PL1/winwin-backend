@@ -25,10 +25,11 @@ import { DriverDto } from 'src/drivers/dtos/driver.dto';
 import { DriveRequestChatDto } from './dto/drive-request-chat.dto';
 import { AllExceptionsFilter } from 'src/shared/filters/all-ws-exception.filter';
 
-import { DriveRequestStatus } from './entities/drive-request.entity';
+import { DriveRequest, DriveRequestStatus } from './entities/drive-request.entity';
 import { CreateDriveRequestDto } from './dto/create-drive-request.dto';
 import { User } from 'src/users/entities/user.entity';
 import { Coordinate } from 'src/shared/dtos/coordinate.dto';
+import { UpdateDriveRequestStatusDto } from './dto/update-drive-request-status.dto';
 
 @UseFilters(new AllExceptionsFilter())
 @WebSocketGateway({
@@ -91,12 +92,6 @@ export class DriveRequestsGateway
       throw new WsException('You are not authorized to perform this action');
     }
 
-    const hostRoom = this.getDriveRequestHostRoom(user.id);
-
-    if (!passengerSocket.rooms.has(hostRoom)) {
-      passengerSocket.join(hostRoom);
-    }
-
     const { origin, destination, route } = requestDriveDto;
 
     const driverSocket = await this.findDriverSocketToOfferJob(user, origin.geometry.location);
@@ -127,13 +122,14 @@ export class DriveRequestsGateway
       status: DriveRequestStatus.ACCEPTED,
       refCode: `DR${date.format('YYYYMMDDHHmmss')}`,
     });
-    const hostRoom = this.getDriveRequestHostRoom(user.id);
-    driverSocket.join(hostRoom);
 
-    this.server.to(hostRoom).emit('drive-request-created', {
-      ...newDriveRequest,
-      route: data.route,
-    });
+    this.server
+      .to(data.user.id)
+      .to(driverSocket.data.user.user_id)
+      .emit('drive-request-created', {
+        ...newDriveRequest,
+        route: data.route,
+      });
   }
 
   @SubscribeMessage('reject-drive-request')
@@ -148,18 +144,35 @@ export class DriveRequestsGateway
       const newDriverSocket = await this.findDriverSocketToOfferJob(data.user, data.origin);
       this.server.to(newDriverSocket.id).emit('job-offer', data);
     } catch (error: unknown) {
-      const hostRoom = this.getDriveRequestHostRoom(data.user.id);
-      this.server.to(hostRoom).emit('drive-request-rejected', data);
+      this.server.to(data.user.id).emit('drive-request-rejected', data);
     }
+  }
+
+  @SubscribeMessage('update-drive-request-status')
+  async updateDriveRequestStatus(@MessageBody() data: UpdateDriveRequestStatusDto) {
+    let updatedDriveRequest: DriveRequest | null = null;
+    try {
+      updatedDriveRequest = await this.driveRequestsService.updateDriveRequestStatus(
+        data.driveRequestId,
+        data.status,
+      );
+    } catch (error: any) {
+      throw new WsException(error.message);
+    }
+    this.server
+      .to(updatedDriveRequest.user.id)
+      .to(updatedDriveRequest.driver.id)
+      .emit('drive-request-updated', updatedDriveRequest);
   }
 
   @SubscribeMessage('chat-message')
   async chatMessage(@ConnectedSocket() client: Socket, @MessageBody() data: DriveRequestChatDto) {
-    const hostRoom = this.getDriveRequestHostRoom(data.to);
-    this.server.to(hostRoom).emit('chat-message-received', {
-      sender: client.data.user.user_id,
-      message: data.message,
-      timestamp: new Date(),
+    const from = client.data.user.user_id;
+    client.to(data.to).emit('chat-message-received', {
+      from,
+      to: data.to,
+      content: data.message,
+      timestamp: new Date().toISOString(),
     });
   }
 
@@ -206,10 +219,6 @@ export class DriveRequestsGateway
     }
 
     return driverSocket;
-  }
-
-  private getDriveRequestHostRoom(userId: string) {
-    return `/users/${userId}/drive-request`;
   }
 
   private getServiceSpotRoom(serviceSpotId: number) {

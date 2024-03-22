@@ -8,6 +8,7 @@ import { Environment } from './config/env.validation';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { validationFailedExceptionFactory } from './shared/exceptions/validation-failed.exception';
 import multipart from '@fastify/multipart';
+import { RedisIoAdapter } from './shared/adapters/redis-io.adapter';
 
 async function bootstrap() {
   const logger = new Logger('Bootstrap');
@@ -51,6 +52,12 @@ async function bootstrap() {
   logger.debug(`Server running on ${HOST}:${PORT} 🚀`);
   logger.debug(`Environment: ${ENV}`);
   logger.debug(`Api Version: ${API_VERSION}`);
+
+  const redisIoAdapter = new RedisIoAdapter(app);
+  const REDIS_HOST = configService.get<string>('REDIS_HOST');
+  const REDIS_PORT = configService.get<number>('REDIS_PORT');
+  await redisIoAdapter.connectToRedis(REDIS_HOST, REDIS_PORT);
+  app.useWebSocketAdapter(redisIoAdapter);
 
   await app.register(multipart, {
     logLevel: 'debug',
