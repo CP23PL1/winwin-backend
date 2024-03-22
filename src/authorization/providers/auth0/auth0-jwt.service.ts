@@ -31,7 +31,6 @@ export class Auth0JwtService {
     const { header } = jwt.decode(token, { complete: true });
     let key: JwksRsa.SigningKey | null = null;
     try {
-      this.logger.debug(`Verifying token with kid: ${header.kid}`);
       key = await this.client.getSigningKey(header.kid);
     } catch (error: any) {
       this.logger.error(

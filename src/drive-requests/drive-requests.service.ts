@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DriveRequest } from './entities/drive-request.entity';
+import { DriveRequest, DriveRequestStatus } from './entities/drive-request.entity';
 import { DeepPartial, Repository } from 'typeorm';
 import { DriversService } from 'src/drivers/drivers.service';
 import { DriveRequestDto } from './dto/drive-request.dto';
@@ -31,11 +31,30 @@ export class DriveRequestsService {
     };
   }
 
-  update(id: number, data: DeepPartial<DriveRequest>) {
-    return this.driveRequestRepository.save({ id, ...data });
+  async updateDriveRequestStatus(id: number, status: DriveRequestStatus) {
+    const driveRequest = await this.findOne(id);
+    if (!driveRequest) {
+      throw new Error('Drive request not found');
+    }
+    const validStatuses = this.getDriveRequestStateMachine(driveRequest.status);
+    if (!validStatuses.includes(status)) {
+      throw new Error('Invalid status');
+    }
+    driveRequest.status = status;
+    const updatedDriveRequest = await this.driveRequestRepository.save(driveRequest);
+    return updatedDriveRequest;
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} driveRequest`;
+  getDriveRequestStateMachine(currentStatus: DriveRequestStatus) {
+    switch (currentStatus) {
+      case DriveRequestStatus.PENDING:
+        return [DriveRequestStatus.ACCEPTED, DriveRequestStatus.REJECTED];
+      case DriveRequestStatus.ACCEPTED:
+        return [DriveRequestStatus.PICKED_UP, DriveRequestStatus.CANCELLED];
+      case DriveRequestStatus.PICKED_UP:
+        return [DriveRequestStatus.COMPLETED, DriveRequestStatus.CANCELLED];
+      default:
+        return [];
+    }
   }
 }
