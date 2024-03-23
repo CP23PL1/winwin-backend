@@ -15,8 +15,7 @@ import { FirebaseModule } from 'nestjs-firebase';
 import { UsersModule } from './users/users.module';
 import { DriveRequestsModule } from './drive-requests/drive-requests.module';
 import { CacheModule } from '@nestjs/cache-manager';
-import type { RedisClientOptions } from 'redis';
-import { redisStore } from 'cache-manager-redis-yet';
+import { redisStore } from 'cache-manager-ioredis-yet';
 import { RedisModule } from '@nestjs-modules/ioredis';
 
 @Module({
@@ -41,7 +40,7 @@ import { RedisModule } from '@nestjs-modules/ioredis';
         )}`,
       }),
     }),
-    CacheModule.registerAsync<RedisClientOptions>({
+    CacheModule.registerAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         store: redisStore,
