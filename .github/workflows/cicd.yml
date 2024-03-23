@@ -87,6 +87,11 @@ jobs:
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
           echo "FIREBASE_STORAGE_BUCKET=${{ secrets.FIREBASE_STORAGE_BUCKET }}" >> .env
           echo "GOOGLE_APPLICATION_CREDENTIALS=service-account.json" >> .env
+          echo "DRIVER_APP_AUTH0_CLIENT_ID=${{ secrets.DRIVER_APP_AUTH0_CLIENT_ID }}" >> .env
+          echo "PASSENGER_APP_AUTH0_CLIENT_ID=${{ secrets.PASSENGER_APP_AUTH0_CLIENT_ID }}" >> .env
+          echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
+          echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
+          echo "CACHE_TTL=${{ secrets.CACHE_TTL }}" >> .env
           touch service-account.json
           echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 -d > service-account.json
 
