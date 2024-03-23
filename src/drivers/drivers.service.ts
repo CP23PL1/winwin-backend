@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
 import { Driver } from './entities/driver.entity';
-import { FindOptionsRelations, FindOptionsWhere, Repository } from 'typeorm';
+import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
 import { DriverDto } from './dtos/driver.dto';
 import { CreateDriverDto } from './dtos/create-driver.dto';
 
@@ -33,5 +33,10 @@ export class DriversService {
   async create(data: CreateDriverDto) {
     const newDriver = await this.driverRepository.save(data);
     return this.findOne(newDriver.id);
+  }
+
+  async update(id: string, data: DeepPartial<Driver>) {
+    await this.driverRepository.update(id, data);
+    return this.findOne(id);
   }
 }

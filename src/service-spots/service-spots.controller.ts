@@ -8,11 +8,12 @@ import {
   Body,
   Query,
   ParseIntPipe,
-  NotFoundException,
   Request,
   UseInterceptors,
   BadRequestException,
   ConflictException,
+  Req,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ServiceSpotsService } from './service-spots.service';
 import { CreateServiceSpot, CreateServiceSpotFiles } from './dto/create-service-spot.dto';
@@ -30,18 +31,15 @@ import { Public } from 'src/authorization/decorators/public.decorator';
 import { ServiceSpotQueryDto } from './dto/service-spot-query.dto';
 import { FileFieldsInterceptor, UploadedFiles } from '@blazity/nest-file-fastify';
 import { FastifyRequest } from 'fastify';
-import { DriversService } from 'src/drivers/drivers.service';
+
+import { ServiceSpotInviteDto } from './dto/service-spot-invite.dto';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
 @Controller('service-spots')
 export class ServiceSpotsController {
-  constructor(
-    private readonly serviceSpotsService: ServiceSpotsService,
-    private readonly driversService: DriversService,
-  ) {}
+  constructor(private readonly serviceSpotsService: ServiceSpotsService) {}
 
-  // TODO: Fix dept
   @ApiCreatedResponse({
     description: 'The record has been successfully created.',
     type: CreateServiceSpot,
@@ -55,10 +53,7 @@ export class ServiceSpotsController {
     @UploadedFiles()
     files: CreateServiceSpotFiles,
   ) {
-    const driver = await this.driversService.findOne(req.user.user_id);
-    console.log(data);
-    console.log(driver.id, data.serviceSpotOwnerId);
-    if (driver.id !== data.serviceSpotOwnerId) {
+    if (req.user.user_id !== data.serviceSpotOwnerId) {
       throw new BadRequestException('You can only create service spot for yourself');
     }
 
@@ -99,11 +94,6 @@ export class ServiceSpotsController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const serviceSpot = await this.serviceSpotsService.findOne(id);
-
-    if (!serviceSpot) {
-      throw new NotFoundException(`Service Spot #${id} not found`);
-    }
-
     return this.serviceSpotsService.mapToDto(serviceSpot);
   }
 
@@ -117,16 +107,10 @@ export class ServiceSpotsController {
   @Patch(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateServiceSpot) {
     const serviceSpot = await this.serviceSpotsService.findOne(id);
-
-    if (!serviceSpot) {
-      throw new NotFoundException(`Service Spot #${id} not found`);
-    }
-
     const updatedServiceSpot = await this.serviceSpotsService.update(id, {
       ...serviceSpot,
       ...data,
     });
-
     return this.serviceSpotsService.mapToDto(updatedServiceSpot);
   }
 
@@ -139,5 +123,26 @@ export class ServiceSpotsController {
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.serviceSpotsService.remove(id);
+  }
+
+  @ApiOkResponse({
+    description: 'Generate invite code for service spot.',
+    type: ServiceSpotInviteDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'Service spot not found.',
+  })
+  @Get(':id/invite-code')
+  async getInviteCode(
+    @Req() req: FastifyRequest,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ServiceSpotInviteDto> {
+    const isOwned = await this.serviceSpotsService.isOwnedServiceSpot(req.user.user_id, id);
+
+    if (!isOwned) {
+      throw new ForbiddenException('You are not the owner of this service spot');
+    }
+
+    return this.serviceSpotsService.getInviteCode(id);
   }
 }
