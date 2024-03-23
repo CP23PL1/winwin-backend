@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateServiceSpot, CreateServiceSpotFiles } from './dto/create-service-spot.dto';
 import { UpdateServiceSpot } from './dto/update-service-spot.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -8,6 +8,10 @@ import { ServiceSpotDto } from './dto/service-spot.dto';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { DriversService } from 'src/drivers/drivers.service';
+import { customAlphabet } from 'nanoid';
+import { InjectRedis } from '@nestjs-modules/ioredis';
+import { Redis } from 'ioredis';
+import { ServiceSpotInviteDto } from './dto/service-spot-invite.dto';
 
 @Injectable()
 export class ServiceSpotsService {
@@ -18,6 +22,8 @@ export class ServiceSpotsService {
     private readonly addressesService: AddressesService,
     @InjectFirebaseAdmin()
     private readonly firebase: FirebaseAdmin,
+    @InjectRedis()
+    private readonly redis: Redis,
   ) {}
 
   create(data: CreateServiceSpot, files: CreateServiceSpotFiles) {
@@ -60,8 +66,12 @@ export class ServiceSpotsService {
     }));
   }
 
-  findOne(id: number) {
-    return this.serviceSpotRepo.findOne({ where: { id } });
+  async findOne(id: number) {
+    const serviceSpot = await this.serviceSpotRepo.findOne({ where: { id } });
+    if (!serviceSpot) {
+      throw new NotFoundException(`Service spot #${id} not found`);
+    }
+    return serviceSpot;
   }
 
   update(id: number, data: UpdateServiceSpot) {
@@ -72,7 +82,17 @@ export class ServiceSpotsService {
     return this.serviceSpotRepo.delete({ id });
   }
 
-  getImageUrl(serviceSpotId: number, imageName: string) {
+  async exists(id: number) {
+    return this.serviceSpotRepo.count({ where: { id } }).then((count) => count > 0);
+  }
+
+  async isOwnedServiceSpot(driverId: string, serviceSpotId: number) {
+    return this.serviceSpotRepo
+      .count({ where: { id: serviceSpotId, serviceSpotOwnerId: driverId } })
+      .then((count) => count > 0);
+  }
+
+  async getImageUrl(serviceSpotId: number, imageName: string) {
     const bucket = this.firebase.storage.bucket();
     return bucket
       .file(`service-spots/${serviceSpotId}/images/${imageName}`)
@@ -81,6 +101,35 @@ export class ServiceSpotsService {
         expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // 1 week
       })
       .then((result) => result[0]);
+  }
+
+  async getInviteCode(serviceSpotId: number): Promise<ServiceSpotInviteDto> {
+    const serviceSpotSessionKey = `service-spot:${serviceSpotId}:invite-code`;
+    let inviteCode = await this.redis.get(serviceSpotSessionKey);
+    if (!inviteCode) {
+      inviteCode = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 5)();
+    }
+    const ttl = 300; // 1 minute (in seconds)
+    const inviteSession = await this.redis.get(`invitation:${inviteCode}`);
+    if (!inviteSession) {
+      await Promise.all([
+        this.redis.set(`invitation:${inviteCode}`, serviceSpotId, 'EX', ttl),
+        this.redis.set(serviceSpotSessionKey, inviteCode, 'EX', ttl),
+      ]);
+    }
+    return {
+      code: inviteCode,
+      expiresAt: Date.now() + ttl * 1000, // 5 minutes
+    };
+  }
+
+  async findServiceSpotByInviteCode(code: string) {
+    const inviteSession = `invitation:${code}`;
+    const serviceSpotId = await this.redis.get(inviteSession);
+    if (!serviceSpotId) {
+      throw new NotFoundException('Invite code is invalid or expired');
+    }
+    return serviceSpotId;
   }
 
   async mapToDto(serviceSpot: ServiceSpot): Promise<ServiceSpotDto> {

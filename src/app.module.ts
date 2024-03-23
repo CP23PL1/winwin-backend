@@ -17,6 +17,7 @@ import { DriveRequestsModule } from './drive-requests/drive-requests.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import type { RedisClientOptions } from 'redis';
 import { redisStore } from 'cache-manager-redis-yet';
+import { RedisModule } from '@nestjs-modules/ioredis';
 
 @Module({
   imports: [
@@ -29,6 +30,15 @@ import { redisStore } from 'cache-manager-redis-yet';
       useFactory: (configService: ConfigService) => ({
         googleApplicationCredential: configService.get<string>('GOOGLE_APPLICATION_CREDENTIALS'),
         storageBucket: configService.get<string>('FIREBASE_STORAGE_BUCKET'),
+      }),
+    }),
+    RedisModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'single',
+        url: `redis://${configService.get<string>('REDIS_HOST')}:${configService.get<number>(
+          'REDIS_PORT',
+        )}`,
       }),
     }),
     CacheModule.registerAsync<RedisClientOptions>({
