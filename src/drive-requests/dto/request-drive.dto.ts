@@ -1,13 +1,8 @@
-import { PlaceData } from '@googlemaps/google-maps-services-js';
+import { RouteDto } from 'src/externals/google-api/dtos/route.dto';
+import { Coordinate } from 'src/shared/dtos/coordinate.dto';
 
 export class RequestDriveDto {
-  origin: Pick<PlaceData, 'name' | 'geometry' | 'place_id'>;
-  destination: Pick<PlaceData, 'name' | 'geometry' | 'place_id'>;
-  route: {
-    duration: string;
-    distanceMeters: number;
-    polyline: {
-      encodedPolyline: string;
-    };
-  };
+  origin: Coordinate;
+  destination: Coordinate;
+  route: RouteDto;
 }

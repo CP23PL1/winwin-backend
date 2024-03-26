@@ -2,9 +2,11 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Patch,
   Post,
   Req,
@@ -25,6 +27,7 @@ import { ServiceSpotsService } from 'src/service-spots/service-spots.service';
 import { JoinServiceSpot } from 'src/service-spots/dto/join-service-spot.dto';
 import { Role } from 'src/authorization/dto/user-info.dto';
 import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
+import { Paginate, PaginateQuery } from 'nestjs-paginate';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
@@ -114,5 +117,11 @@ export class DriversController {
         id: parseInt(serviceSpotId),
       },
     });
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get('me/drive-requests')
+  async getDriveRequests(@Paginate() query: PaginateQuery, @Req() req: FastifyRequest) {
+    return this.driversService.findAllDriveRequestsByDriverId(req.user.user_id, query);
   }
 }

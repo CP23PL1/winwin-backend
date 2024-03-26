@@ -1,16 +1,14 @@
 import { DriverDto } from 'src/drivers/dtos/driver.dto';
-import { Coordinate } from 'src/shared/dtos/coordinate.dto';
 import { User } from 'src/users/entities/user.entity';
 import { DriveRequestStatus } from '../entities/drive-request.entity';
+import { Waypoint } from 'src/shared/dtos/place.dto';
 
 export class DriveRequestDto {
-  id: number;
+  id: string;
   user: User;
   driver: DriverDto;
-  origin: Coordinate;
-  destination: Coordinate;
+  origin: Waypoint;
+  destination: Waypoint;
   status: DriveRequestStatus;
-  refCode: string;
   createdAt: Date;
-  updatedAt: Date;
 }

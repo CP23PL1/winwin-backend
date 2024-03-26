@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DriveRequest, DriveRequestStatus } from './entities/drive-request.entity';
+import { DriveRequest } from './entities/drive-request.entity';
 import { DeepPartial, Repository } from 'typeorm';
 import { DriversService } from 'src/drivers/drivers.service';
 import { DriveRequestDto } from './dto/drive-request.dto';
+import { PaginateQuery, paginate } from 'nestjs-paginate';
 
 @Injectable()
 export class DriveRequestsService {
@@ -18,11 +19,14 @@ export class DriveRequestsService {
     return this.findOne(newDriveRequest.id);
   }
 
-  findAll() {
-    return `This action returns all driveRequests`;
+  findAllDriveRequestsByDriverId(driverId: string, query: PaginateQuery) {
+    return paginate(query, this.driveRequestRepository, {
+      sortableColumns: ['id', 'status', 'createdAt'],
+      where: { driverId },
+    });
   }
 
-  async findOne(id: number): Promise<DriveRequestDto> {
+  async findOne(id: string): Promise<DriveRequestDto> {
     const driveRequest = await this.driveRequestRepository.findOne({ where: { id } });
     const driver = await this.driversService.findOne(driveRequest.driverId);
     return {
@@ -31,30 +35,25 @@ export class DriveRequestsService {
     };
   }
 
-  async updateDriveRequestStatus(id: number, status: DriveRequestStatus) {
-    const driveRequest = await this.findOne(id);
-    if (!driveRequest) {
-      throw new Error('Drive request not found');
+  calculatePriceByDistanceMeters(distanceMeters: number) {
+    if (distanceMeters <= 0) {
+      throw new Error('Distance must be greater than 0');
     }
-    const validStatuses = this.getDriveRequestStateMachine(driveRequest.status);
-    if (!validStatuses.includes(status)) {
-      throw new Error('Invalid status');
+    let price = 0;
+    const distanceKm = Math.floor(distanceMeters / 1000);
+    if (distanceKm <= 1.1) {
+      price = 15;
+    } else if (distanceKm <= 1.5) {
+      price = 20;
+    } else if (distanceKm <= 2) {
+      price = 25;
+    } else if (distanceKm <= 5) {
+      price = (distanceKm - 2) * 5 + 25;
+    } else if (distanceKm <= 10) {
+      price = (distanceKm - 5) * 10 + 40;
+    } else {
+      price = 90;
     }
-    driveRequest.status = status;
-    const updatedDriveRequest = await this.driveRequestRepository.save(driveRequest);
-    return updatedDriveRequest;
-  }
-
-  getDriveRequestStateMachine(currentStatus: DriveRequestStatus) {
-    switch (currentStatus) {
-      case DriveRequestStatus.PENDING:
-        return [DriveRequestStatus.ACCEPTED, DriveRequestStatus.REJECTED];
-      case DriveRequestStatus.ACCEPTED:
-        return [DriveRequestStatus.PICKED_UP, DriveRequestStatus.CANCELLED];
-      case DriveRequestStatus.PICKED_UP:
-        return [DriveRequestStatus.COMPLETED, DriveRequestStatus.CANCELLED];
-      default:
-        return [];
-    }
+    return price;
   }
 }

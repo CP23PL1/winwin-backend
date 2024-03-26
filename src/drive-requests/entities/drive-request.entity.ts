@@ -1,29 +1,17 @@
 import { Driver } from 'src/drivers/entities/driver.entity';
-import { Coordinate } from 'src/shared/dtos/coordinate.dto';
+import { Waypoint } from 'src/shared/dtos/place.dto';
 import { User } from 'src/users/entities/user.entity';
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  Index,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryColumn } from 'typeorm';
 
 export enum DriveRequestStatus {
-  PENDING = 'pending',
-  ACCEPTED = 'accepted',
-  PICKED_UP = 'picked_up',
-  REJECTED = 'rejected',
-  CANCELLED = 'cancelled',
   COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
 }
 
 @Entity()
 export class DriveRequest {
-  @PrimaryGeneratedColumn('increment')
-  id: number;
+  @PrimaryColumn()
+  id: string;
 
   @Column()
   userId: string;
@@ -40,25 +28,24 @@ export class DriveRequest {
   driver: Driver;
 
   @Column({ type: 'jsonb' })
-  origin: Coordinate;
+  origin: Waypoint;
 
   @Column({ type: 'jsonb' })
-  destination: Coordinate;
+  destination: Waypoint;
+
+  @Column()
+  distanceMeters: number;
+
+  @Column()
+  paidAmount: number;
 
   @Column({
     type: 'enum',
     enum: DriveRequestStatus,
     enumName: 'drive_request_status',
-    default: DriveRequestStatus.PENDING,
   })
   status: DriveRequestStatus;
 
-  @Column()
-  refCode: string;
-
   @CreateDateColumn()
   createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
 }

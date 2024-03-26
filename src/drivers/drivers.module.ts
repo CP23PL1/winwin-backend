@@ -5,10 +5,11 @@ import { DriversMockupApiModule } from 'src/externals/drivers-mockup-api/drivers
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Driver } from './entities/driver.entity';
 import { ServiceSpotsModule } from 'src/service-spots/service-spots.module';
+import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Driver]),
+    TypeOrmModule.forFeature([Driver, DriveRequest]),
     forwardRef(() => ServiceSpotsModule),
     DriversMockupApiModule,
   ],

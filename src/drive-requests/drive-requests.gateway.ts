@@ -9,8 +9,7 @@ import {
   ConnectedSocket,
   WsException,
 } from '@nestjs/websockets';
-import { Socket, RemoteSocket, Server } from 'socket.io';
-import { DriveRequestsService } from './drive-requests.service';
+import { Socket, RemoteSocket, Namespace } from 'socket.io';
 import { RequestDriveDto } from './dto/request-drive.dto';
 import { DriversService } from 'src/drivers/drivers.service';
 import { Logger, UseFilters } from '@nestjs/common';
@@ -22,14 +21,19 @@ import { ConfigService } from '@nestjs/config';
 import { ServiceSpotsService } from 'src/service-spots/service-spots.service';
 import * as moment from 'moment';
 import { DriverDto } from 'src/drivers/dtos/driver.dto';
-import { DriveRequestChatDto } from './dto/drive-request-chat.dto';
+import { CreateDriveRequestChatDto } from './dto/create-drive-request-chat.dto';
 import { AllExceptionsFilter } from 'src/shared/filters/all-ws-exception.filter';
-
-import { DriveRequest, DriveRequestStatus } from './entities/drive-request.entity';
-import { CreateDriveRequestDto } from './dto/create-drive-request.dto';
-import { User } from 'src/users/entities/user.entity';
 import { Coordinate } from 'src/shared/dtos/coordinate.dto';
 import { UpdateDriveRequestStatusDto } from './dto/update-drive-request-status.dto';
+import { customAlphabet, nanoid } from 'nanoid';
+import { RedisDriveRequestStore } from './stores/redis-drive-request.store';
+import {
+  DriveRequestSession,
+  DriveRequestSessionStatus,
+} from './stores/dto/drive-request-session.dto';
+import { DriveRequestsService } from './drive-requests.service';
+import { DriveRequestStatus } from './entities/drive-request.entity';
+import { GoogleApiService } from 'src/externals/google-api/google-api.service';
 
 @UseFilters(new AllExceptionsFilter())
 @WebSocketGateway({
@@ -44,14 +48,16 @@ export class DriveRequestsGateway
   constructor(
     private readonly configService: ConfigService,
     private readonly auth0JwtService: Auth0JwtService,
-    private readonly driveRequestsService: DriveRequestsService,
     private readonly serviceSpotsService: ServiceSpotsService,
     private readonly driversService: DriversService,
     private readonly usersService: UsersService,
+    private readonly redisDriveRequestStore: RedisDriveRequestStore,
+    private readonly driveRequestsService: DriveRequestsService,
+    private readonly googleApiService: GoogleApiService,
   ) {}
 
   @WebSocketServer()
-  server: Server;
+  server: Namespace;
 
   afterInit() {
     this.server.use(auth0JwtSocketIoMiddleware(this.auth0JwtService));
@@ -95,89 +101,166 @@ export class DriveRequestsGateway
 
     const { origin, destination, route } = requestDriveDto;
 
-    const driverSocket = await this.findDriverSocketToOfferJob(user, origin.geometry.location);
+    const driverSocket = await this.findDriverSocketToOfferJob(user.id, origin);
 
-    const payload: CreateDriveRequestDto = {
-      user,
-      origin: origin.geometry.location,
-      destination: destination.geometry.location,
-      route,
+    const customId = customAlphabet('1234567890', 6);
+    const refCode = `DR-${moment().format('YYMMDD')}-${customId()}`;
+    const createdAt = moment().toISOString();
+
+    const [originDetail, destinationDetail] = await Promise.all([
+      this.googleApiService.getReverseGeocode(origin),
+      this.googleApiService.getReverseGeocode(destination),
+    ]);
+
+    const payload: DriveRequestSession = {
+      ...route,
+      userId: user.id,
+      origin: {
+        name: originDetail.formatted_address,
+        location: origin,
+      },
+      destination: {
+        name: destinationDetail.formatted_address,
+        location: destination,
+      },
+      status: DriveRequestSessionStatus.PENDING,
+      refCode,
+      createdAt,
     };
 
-    this.server.to(driverSocket.data.user.user_id).emit('job-offer', payload);
+    const sid = nanoid();
+
+    await this.redisDriveRequestStore.saveDriveRequest(sid, payload);
+
+    const driver = await this.driversService.findOne(driverSocket.data.user.user_id);
+
+    this.server.to(driverSocket.data.user.user_id).emit('job-offer', {
+      ...payload,
+      sid,
+      user,
+      driver,
+    });
   }
 
   @SubscribeMessage('accept-drive-request')
   async acceptedRequest(
     @ConnectedSocket() driverSocket: Socket,
-    @MessageBody() data: CreateDriveRequestDto,
+    @MessageBody() data: DriveRequestSession,
   ) {
-    const driver = await this.driversService.findOne(driverSocket.data.user.user_id);
-    const user = await this.usersService.findOne(data.user.id, UserIdentificationType.ID);
-    const date = moment();
-    const newDriveRequest = await this.driveRequestsService.create({
-      user,
-      driver,
-      origin: data.origin,
-      destination: data.destination,
-      status: DriveRequestStatus.ACCEPTED,
-      refCode: `DR${date.format('YYYYMMDDHHmmss')}`,
-    });
+    const driveRequestExists = await this.redisDriveRequestStore.exists(data.sid);
+    if (!driveRequestExists) {
+      throw new WsException('Drive request not found');
+    }
+
+    const canTransition = this.redisDriveRequestStore.canTransitionTo(
+      data.status,
+      DriveRequestSessionStatus.ON_GOING,
+    );
+
+    if (!canTransition) {
+      throw new WsException('Invalid drive request status transition');
+    }
+
+    const payload = {
+      status: DriveRequestSessionStatus.ON_GOING,
+      driverId: driverSocket.data.user.user_id,
+    };
+
+    await this.redisDriveRequestStore.saveDriveRequest(data.sid, payload);
 
     this.server
-      .to(data.user.id)
+      .to(data.userId)
       .to(driverSocket.data.user.user_id)
       .emit('drive-request-created', {
-        ...newDriveRequest,
-        route: data.route,
+        ...data,
+        ...payload,
       });
   }
 
   @SubscribeMessage('reject-drive-request')
   async rejectRequest(
     @ConnectedSocket() driverSocket: Socket,
-    @MessageBody() data: CreateDriveRequestDto,
+    @MessageBody() data: DriveRequestSession,
   ) {
     // Cooldown driver for 5 minutes before they can get another job offer
     driverSocket.data.cooldown = moment().add(5, 'minutes').toISOString();
 
     try {
-      const newDriverSocket = await this.findDriverSocketToOfferJob(data.user, data.origin);
+      const newDriverSocket = await this.findDriverSocketToOfferJob(
+        data.userId,
+        data.origin.location,
+      );
       this.server.to(newDriverSocket.id).emit('job-offer', data);
     } catch (error: unknown) {
-      this.server.to(data.user.id).emit('drive-request-rejected', data);
+      this.server.to(data.userId).emit('drive-request-rejected', data);
     }
   }
 
   @SubscribeMessage('update-drive-request-status')
   async updateDriveRequestStatus(@MessageBody() data: UpdateDriveRequestStatusDto) {
-    let updatedDriveRequest: DriveRequest | null = null;
-    try {
-      updatedDriveRequest = await this.driveRequestsService.updateDriveRequestStatus(
-        data.driveRequestId,
-        data.status,
-      );
-    } catch (error: any) {
-      throw new WsException(error.message);
+    const driveRequest = await this.redisDriveRequestStore.findDriveRequest(data.driveRequestSid);
+    if (!driveRequest) {
+      throw new WsException('Drive request not found');
     }
+
+    const canTransition = this.redisDriveRequestStore.canTransitionTo(
+      driveRequest.status,
+      data.status,
+    );
+
+    if (!canTransition) {
+      throw new WsException('Invalid drive request status transition');
+    }
+
+    const payload = {
+      status: data.status,
+    };
+
+    if (payload.status === DriveRequestSessionStatus.COMPLETED) {
+      await this.redisDriveRequestStore.removeDriveRequest(data.driveRequestSid);
+      await this.driveRequestsService.create({
+        id: driveRequest.refCode,
+        userId: driveRequest.userId,
+        driverId: driveRequest.driverId,
+        origin: driveRequest.origin,
+        destination: driveRequest.destination,
+        distanceMeters: driveRequest.distanceMeters,
+        paidAmount: driveRequest.total,
+        status: DriveRequestStatus.COMPLETED,
+      });
+    } else {
+      await this.redisDriveRequestStore.saveDriveRequest(data.driveRequestSid, payload);
+    }
+
     this.server
-      .to(updatedDriveRequest.user.id)
-      .to(updatedDriveRequest.driver.id)
-      .emit('drive-request-updated', updatedDriveRequest);
+      .to(driveRequest.userId)
+      .to(driveRequest.driverId)
+      .emit('drive-request-updated', payload);
+  }
+
+  @SubscribeMessage('get-chat-messages')
+  async getChatMessages(@MessageBody() driveRequestSid: string) {
+    const messages = await this.redisDriveRequestStore.findMessages(driveRequestSid);
+    return messages;
   }
 
   @SubscribeMessage('chat-message')
-  async chatMessage(@ConnectedSocket() client: Socket, @MessageBody() data: DriveRequestChatDto) {
+  async chatMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: CreateDriveRequestChatDto,
+  ) {
     const from = client.data.user.user_id;
-    client.to(data.to).emit('chat-message-received', {
+    const payload = {
       from,
       to: data.to,
       content: data.message,
       timestamp: new Date().toISOString(),
-    });
+    };
+    client.to(data.to).emit('chat-message-received', payload);
+    this.redisDriveRequestStore.saveMessage(data.driveRequestSid, payload);
   }
 
-  private async findDriverSocketToOfferJob(user: User, origin: Coordinate) {
+  private async findDriverSocketToOfferJob(userId: string, origin: Coordinate) {
     const nearbyServiceSpots = await this.serviceSpotsService.findAllByDistance(
       origin.lat,
       origin.lng,
@@ -208,7 +291,7 @@ export class DriveRequestsGateway
       const rnd = crypto.getRandomValues(new Uint32Array(1))[0];
       const rndDriverSocket = driverSockets[rnd % driverSockets.length];
 
-      if (rndDriverSocket.data.user.phone_number === user.phoneNumber) {
+      if (rndDriverSocket.data.user.user_id === userId) {
         continue;
       }
 

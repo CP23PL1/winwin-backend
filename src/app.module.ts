@@ -18,6 +18,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-ioredis-yet';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { Auth0RolesGuard } from './authorization/providers/auth0/auth0-roles.guard';
+import { GoogleApiModule } from './externals/google-api/google-api.module';
 
 @Module({
   imports: [
@@ -52,12 +53,13 @@ import { Auth0RolesGuard } from './authorization/providers/auth0/auth0-roles.gua
     }),
     TypeOrmModule.forRoot(dataSourceOptions),
     DriversModule,
+    GoogleApiModule,
     DriversMockupApiModule,
     ServiceSpotsModule,
+    DriveRequestsModule,
     AddressesModule,
     AuthorizationModule,
     UsersModule,
-    DriveRequestsModule,
   ],
   providers: [
     {

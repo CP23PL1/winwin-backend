@@ -5,14 +5,25 @@ import { Driver } from './entities/driver.entity';
 import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
 import { DriverDto } from './dtos/driver.dto';
 import { CreateDriverDto } from './dtos/create-driver.dto';
+import { PaginateQuery, paginate } from 'nestjs-paginate';
+import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
 
 @Injectable()
 export class DriversService {
   constructor(
     @InjectRepository(Driver)
     private readonly driverRepository: Repository<Driver>,
+    @InjectRepository(DriveRequest)
+    private readonly driveRequestRepository: Repository<DriveRequest>,
     private readonly driversMockupApi: DriversMockupApiService,
   ) {}
+
+  async findAllDriveRequestsByDriverId(driverId: string, query: PaginateQuery) {
+    return paginate(query, this.driveRequestRepository, {
+      sortableColumns: ['id', 'status', 'createdAt'],
+      where: { driverId },
+    });
+  }
 
   async findOne(id: string): Promise<DriverDto> {
     const driver = await this.driverRepository.findOne({ where: { id } });

@@ -1,10 +1,10 @@
-import { IsEnum, IsPositive } from 'class-validator';
-import { DriveRequestStatus } from '../entities/drive-request.entity';
+import { IsEnum, IsString } from 'class-validator';
+import { DriveRequestSessionStatus } from '../stores/dto/drive-request-session.dto';
 
 export class UpdateDriveRequestStatusDto {
-  @IsPositive()
-  driveRequestId: number;
+  @IsString()
+  driveRequestSid: string;
 
-  @IsEnum(DriveRequestStatus)
-  status: DriveRequestStatus;
+  @IsEnum(DriveRequestSessionStatus)
+  status: DriveRequestSessionStatus;
 }
