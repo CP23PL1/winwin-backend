@@ -34,6 +34,7 @@ import { UpdateDriveRequestStatusDto } from './dto/update-drive-request-status.d
 @UseFilters(new AllExceptionsFilter())
 @WebSocketGateway({
   namespace: 'drive-request',
+  path: '/pl1-socket',
 })
 export class DriveRequestsGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
