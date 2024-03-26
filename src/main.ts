@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { Environment } from './config/env.validation';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { validationFailedExceptionFactory } from './shared/exceptions/validation-failed.exception';
@@ -17,13 +17,15 @@ async function bootstrap() {
   // Configurations
   const configService = app.get(ConfigService);
   const API_VERSION = configService.get<string>('API_VERSION');
-  const API_VERSION_PREFIX = `v${API_VERSION.split('.')[0]}`;
   const HOST = configService.get<string>('HOST') || '0.0.0.0';
   const PORT = configService.get<number>('PORT') || 3000;
   const ENV = configService.get<Environment>('NODE_ENV');
 
   // App settings
-  app.setGlobalPrefix(API_VERSION_PREFIX);
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: API_VERSION.split('.')[0],
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,

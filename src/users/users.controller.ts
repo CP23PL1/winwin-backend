@@ -3,26 +3,44 @@ import {
   Get,
   Post,
   Body,
-  Patch,
   Param,
   Query,
   Req,
   ConflictException,
   BadRequestException,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dtos/create-user.dto';
-import { UpdateUserDto } from './dtos/update-user.dto';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { FindOneUserQueryDto, UserIdentificationType } from './dtos/find-one-user-query.dto';
 import { FastifyRequest } from 'fastify';
+import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
+import { Role } from 'src/authorization/dto/user-info.dto';
 
 @ApiTags('Users')
 @ApiBearerAuth()
+@Auth0Roles([Role.Passenger])
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @HttpCode(HttpStatus.CREATED)
+  @ApiCreatedResponse({
+    description: 'The record has been successfully created.',
+    type: CreateUserDto,
+  })
+  @ApiConflictResponse({
+    description: 'User with the provided phone number or email already exists',
+  })
   @Post()
   async create(@Req() req: FastifyRequest, @Body() createUserDto: CreateUserDto) {
     try {
@@ -31,33 +49,58 @@ export class UsersController {
     } catch (error: any) {
       switch (error.code) {
         case '23505':
-          throw new ConflictException(
-            'User with the provided phone number or email already exists',
-          );
+          throw new ConflictException({
+            code: 'user_already_exists',
+            message: 'User with the provided phone number or email already exists',
+          });
         default:
           throw error;
       }
     }
   }
 
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'User information',
+  })
+  @ApiBadRequestResponse({
+    description: 'User not found',
+  })
   @Get('me')
   async getMyUserInfo(@Req() req: FastifyRequest) {
     const user = await this.usersService.findOne(req.user.user_id, UserIdentificationType.ID);
 
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new BadRequestException({
+        code: 'user_not_found',
+        message: 'User not found',
+      });
     }
 
     return user;
   }
 
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'User information',
+  })
+  @ApiBadRequestResponse({
+    description: 'User not found',
+  })
   @Get(':identifier')
-  findOne(@Param('identifier') identifier: string, @Query() { identify_by }: FindOneUserQueryDto) {
-    return this.usersService.findOne(identifier, identify_by);
-  }
+  async findOne(
+    @Param('identifier') identifier: string,
+    @Query() { identify_by }: FindOneUserQueryDto,
+  ) {
+    const user = await this.usersService.findOne(identifier, identify_by);
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(+id, updateUserDto);
+    if (!user) {
+      throw new BadRequestException({
+        code: 'user_not_found',
+        message: 'User not found',
+      });
+    }
+
+    return user;
   }
 }

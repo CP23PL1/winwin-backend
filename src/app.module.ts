@@ -17,6 +17,7 @@ import { DriveRequestsModule } from './drive-requests/drive-requests.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-ioredis-yet';
 import { RedisModule } from '@nestjs-modules/ioredis';
+import { Auth0RolesGuard } from './authorization/providers/auth0/auth0-roles.guard';
 
 @Module({
   imports: [
@@ -62,6 +63,10 @@ import { RedisModule } from '@nestjs-modules/ioredis';
     {
       provide: APP_GUARD,
       useClass: Auth0JwtGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: Auth0RolesGuard,
     },
     {
       provide: APP_INTERCEPTOR,

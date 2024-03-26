@@ -15,6 +15,7 @@ import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiNoContentResponse,
+  ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { FastifyRequest } from 'fastify';
@@ -22,9 +23,12 @@ import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/driver
 import { Public } from 'src/authorization/decorators/public.decorator';
 import { ServiceSpotsService } from 'src/service-spots/service-spots.service';
 import { JoinServiceSpot } from 'src/service-spots/dto/join-service-spot.dto';
+import { Role } from 'src/authorization/dto/user-info.dto';
+import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
+@Auth0Roles([Role.Driver])
 @Controller('drivers')
 export class DriversController {
   constructor(
@@ -33,7 +37,13 @@ export class DriversController {
     private readonly serviceSpotsService: ServiceSpotsService,
   ) {}
 
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({
+    description: 'Driver successfully verified.',
+  })
+  @ApiBadRequestResponse({
+    description: 'This phone number is not registered as a driver',
+  })
   @Public()
   @Post('verify')
   async verify(@Body() driverVerifyDto: DriverVerifyDto) {
@@ -43,24 +53,45 @@ export class DriversController {
     );
 
     if (!driverInfo) {
-      throw new BadRequestException('This phone number is not registered as a driver');
+      throw new BadRequestException({
+        code: 'unregistered_driver',
+        message: 'This phone number is not registered as a driver',
+      });
     }
-
-    return driverInfo;
   }
 
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Driver information successfully retrieved.',
+    type: DriverVerifyDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'This phone number is not registered as a driver',
+  })
   @Get('me')
   async getMyDriverInfo(@Req() req: FastifyRequest) {
-    let driver = await this.driversService.findOne(req.user.user_id);
+    const driverInfo = await this.driversMockupApiService.getDriver(
+      req.user.phone_number,
+      'phone_number',
+    );
 
-    if (!driver) {
-      driver = await this.driversService.create({
-        id: req.user.user_id,
-        phoneNumber: req.user.phone_number,
+    if (!driverInfo) {
+      throw new BadRequestException({
+        code: 'unregistered_driver',
+        message: 'This phone number is not registered as a driver',
       });
     }
 
-    return driver;
+    const driver = await this.driversService.findOne(req.user.user_id);
+
+    if (driver) {
+      return driver;
+    }
+
+    return this.driversService.create({
+      id: req.user.user_id,
+      phoneNumber: req.user.phone_number,
+    });
   }
 
   @HttpCode(HttpStatus.NO_CONTENT)

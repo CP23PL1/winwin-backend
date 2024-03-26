@@ -14,7 +14,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     resposne.status(status).send({
       status,
-      name: exception.name,
+      code: exceptionResponse.code,
       message: exceptionResponse.message,
       errors,
     });

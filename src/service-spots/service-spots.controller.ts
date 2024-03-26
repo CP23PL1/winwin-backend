@@ -14,6 +14,8 @@ import {
   ConflictException,
   Req,
   ForbiddenException,
+  HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
 import { ServiceSpotsService } from './service-spots.service';
 import { CreateServiceSpot, CreateServiceSpotFiles } from './dto/create-service-spot.dto';
@@ -33,6 +35,8 @@ import { FileFieldsInterceptor, UploadedFiles } from '@blazity/nest-file-fastify
 import { FastifyRequest } from 'fastify';
 
 import { ServiceSpotInviteDto } from './dto/service-spot-invite.dto';
+import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
+import { Role } from 'src/authorization/dto/user-info.dto';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
@@ -40,6 +44,8 @@ import { ServiceSpotInviteDto } from './dto/service-spot-invite.dto';
 export class ServiceSpotsController {
   constructor(private readonly serviceSpotsService: ServiceSpotsService) {}
 
+  @Auth0Roles([Role.Driver])
+  @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({
     description: 'The record has been successfully created.',
     type: CreateServiceSpot,
@@ -72,6 +78,7 @@ export class ServiceSpotsController {
     }
   }
 
+  @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     type: ServiceSpotDto,
     description: 'List of service spots with distance from given location.',
@@ -83,6 +90,7 @@ export class ServiceSpotsController {
     return this.serviceSpotsService.findAllByDistance(lat, lng, radius);
   }
 
+  @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     type: ServiceSpotDto,
     description: 'Get service spot detail by service spot id.',
@@ -97,6 +105,8 @@ export class ServiceSpotsController {
     return this.serviceSpotsService.mapToDto(serviceSpot);
   }
 
+  @Auth0Roles([Role.Driver])
+  @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     type: ServiceSpotDto,
     description: 'Update service spot detail by service spot id.',
@@ -105,8 +115,20 @@ export class ServiceSpotsController {
     description: 'Service spot not found.',
   })
   @Patch(':id')
-  async update(@Param('id', ParseIntPipe) id: number, @Body() data: UpdateServiceSpot) {
+  async update(
+    @Req() req: FastifyRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() data: UpdateServiceSpot,
+  ) {
     const serviceSpot = await this.serviceSpotsService.findOne(id);
+
+    if (serviceSpot.serviceSpotOwnerId !== req.user.user_id) {
+      throw new ForbiddenException({
+        code: 'not_owner',
+        message: 'You are not the owner of this service spot',
+      });
+    }
+
     const updatedServiceSpot = await this.serviceSpotsService.update(id, {
       ...serviceSpot,
       ...data,
@@ -125,6 +147,8 @@ export class ServiceSpotsController {
     return this.serviceSpotsService.remove(id);
   }
 
+  @Auth0Roles([Role.Driver])
+  @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     description: 'Generate invite code for service spot.',
     type: ServiceSpotInviteDto,
@@ -140,7 +164,10 @@ export class ServiceSpotsController {
     const isOwned = await this.serviceSpotsService.isOwnedServiceSpot(req.user.user_id, id);
 
     if (!isOwned) {
-      throw new ForbiddenException('You are not the owner of this service spot');
+      throw new ForbiddenException({
+        code: 'not_owner',
+        message: 'You are not the owner of this service spot',
+      });
     }
 
     return this.serviceSpotsService.getInviteCode(id);
