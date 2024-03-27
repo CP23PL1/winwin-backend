@@ -38,7 +38,7 @@ import { GoogleApiService } from 'src/externals/google-api/google-api.service';
 @UseFilters(new AllExceptionsFilter())
 @WebSocketGateway({
   namespace: 'drive-request',
-  path: '/pl1-socket',
+  path: process.env.SOCKET_IO_PATH,
 })
 export class DriveRequestsGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit

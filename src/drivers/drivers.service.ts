@@ -25,6 +25,20 @@ export class DriversService {
     });
   }
 
+  async findAllInServiceSpot(serviceSpotId: number) {
+    const driverPhoneNumbers = await this.driverRepository.find({
+      select: ['phoneNumber'],
+      where: { serviceSpot: { id: serviceSpotId } },
+    });
+
+    const drivers = await this.driversMockupApi.getDrivers({
+      $in_field: 'phoneNumber',
+      $in: driverPhoneNumbers.map((driver) => driver.phoneNumber).join(','),
+    });
+
+    return drivers;
+  }
+
   async findOne(id: string): Promise<DriverDto> {
     const driver = await this.driverRepository.findOne({ where: { id } });
     if (!driver) {

@@ -37,12 +37,17 @@ import { FastifyRequest } from 'fastify';
 import { ServiceSpotInviteDto } from './dto/service-spot-invite.dto';
 import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
 import { Role } from 'src/authorization/dto/user-info.dto';
+import { DriversService } from 'src/drivers/drivers.service';
+import { Paginate, PaginateQuery } from 'nestjs-paginate';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
 @Controller('service-spots')
 export class ServiceSpotsController {
-  constructor(private readonly serviceSpotsService: ServiceSpotsService) {}
+  constructor(
+    private readonly serviceSpotsService: ServiceSpotsService,
+    private readonly driversService: DriversService,
+  ) {}
 
   @Auth0Roles([Role.Driver])
   @HttpCode(HttpStatus.CREATED)
@@ -103,6 +108,13 @@ export class ServiceSpotsController {
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const serviceSpot = await this.serviceSpotsService.findOne(id);
     return this.serviceSpotsService.mapToDto(serviceSpot);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Get(':id/drivers')
+  async findDrivers(@Param('id', ParseIntPipe) id: number) {
+    const drivers = await this.driversService.findAllInServiceSpot(id);
+    return drivers;
   }
 
   @Auth0Roles([Role.Driver])

@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { AxiosError } from 'axios';
 import { catchError, firstValueFrom } from 'rxjs';
 import { DriverInfoDto } from './dtos/driver-info.dto';
+import { GetDriversQuery } from './dtos/get-drivers-query.dto';
 
 @Injectable()
 export class DriversMockupApiService {
@@ -20,8 +21,8 @@ export class DriversMockupApiService {
     return data;
   }
 
-  async getDrivers(): Promise<DriverInfoDto[]> {
-    const observable = this.http.get<DriverInfoDto[]>('/drivers').pipe(
+  async getDrivers(query?: GetDriversQuery): Promise<DriverInfoDto[]> {
+    const observable = this.http.get<DriverInfoDto[]>('/drivers', { params: query }).pipe(
       catchError((error: AxiosError) => {
         throw new Error(error.message);
       }),
