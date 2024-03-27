@@ -29,8 +29,13 @@ export class DriversService {
     const driverPhoneNumbers = await this.driverRepository.find({
       select: ['phoneNumber'],
       where: { serviceSpot: { id: serviceSpotId } },
+      loadEagerRelations: false,
     });
 
+    if (!driverPhoneNumbers.length) {
+      return [];
+    }
+    console.log(driverPhoneNumbers.map((driver) => driver.phoneNumber).join(','));
     const drivers = await this.driversMockupApi.getDrivers({
       $in_field: 'phoneNumber',
       $in: driverPhoneNumbers.map((driver) => driver.phoneNumber).join(','),

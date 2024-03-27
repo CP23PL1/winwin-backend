@@ -11,7 +11,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     // Check if the exception response is a validation error
     const errors = exceptionResponse?.errors;
-
     resposne.status(status).send({
       status,
       code: exceptionResponse.code,

@@ -8,6 +8,7 @@ import {
   OnGatewayInit,
   ConnectedSocket,
   WsException,
+  BaseWsExceptionFilter,
 } from '@nestjs/websockets';
 import { Socket, RemoteSocket, Namespace } from 'socket.io';
 import { RequestDriveDto } from './dto/request-drive.dto';
@@ -22,7 +23,6 @@ import { ServiceSpotsService } from 'src/service-spots/service-spots.service';
 import * as moment from 'moment';
 import { DriverDto } from 'src/drivers/dtos/driver.dto';
 import { CreateDriveRequestChatDto } from './dto/create-drive-request-chat.dto';
-import { AllExceptionsFilter } from 'src/shared/filters/all-ws-exception.filter';
 import { Coordinate } from 'src/shared/dtos/coordinate.dto';
 import { UpdateDriveRequestStatusDto } from './dto/update-drive-request-status.dto';
 import { customAlphabet, nanoid } from 'nanoid';
@@ -35,7 +35,6 @@ import { DriveRequestsService } from './drive-requests.service';
 import { DriveRequestStatus } from './entities/drive-request.entity';
 import { GoogleApiService } from 'src/externals/google-api/google-api.service';
 
-@UseFilters(new AllExceptionsFilter())
 @WebSocketGateway({
   namespace: 'drive-request',
   path: process.env.SOCKET_IO_PATH,
@@ -228,6 +227,8 @@ export class DriveRequestsGateway
         paidAmount: driveRequest.total,
         status: DriveRequestStatus.COMPLETED,
       });
+      this.server.to(driveRequest.userId).emit('drive-request-completed');
+      return;
     } else {
       await this.redisDriveRequestStore.saveDriveRequest(data.driveRequestSid, payload);
     }
@@ -299,6 +300,7 @@ export class DriveRequestsGateway
     }
 
     if (!driverSocket) {
+      this.logger.error('No driver available at the moment');
       throw new WsException('No drive available at the moment. Please try again later.');
     }
 

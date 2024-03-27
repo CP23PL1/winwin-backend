@@ -16,12 +16,6 @@ export class RedisIoAdapter extends IoAdapter {
 
   createIOServer(port: number, options?: ServerOptions): any {
     const server = super.createIOServer(port, options) as Server;
-    server._opts.connectionStateRecovery = {
-      // the backup duration of the sessions and the packets
-      maxDisconnectionDuration: 2 * 60 * 1000 /* 2 minutes */,
-      // whether to skip middlewares upon successful recovery
-      skipMiddlewares: true,
-    };
     server.adapter(this.adapterConstructor);
     return server;
   }

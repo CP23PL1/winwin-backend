@@ -38,7 +38,6 @@ import { ServiceSpotInviteDto } from './dto/service-spot-invite.dto';
 import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
 import { Role } from 'src/authorization/dto/user-info.dto';
 import { DriversService } from 'src/drivers/drivers.service';
-import { Paginate, PaginateQuery } from 'nestjs-paginate';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
