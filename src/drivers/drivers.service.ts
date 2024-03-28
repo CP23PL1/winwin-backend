@@ -1,15 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
 import { Driver } from './entities/driver.entity';
 import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
-import { DriverDto } from './dtos/driver.dto';
 import { CreateDriverDto } from './dtos/create-driver.dto';
 import { PaginateQuery, paginate } from 'nestjs-paginate';
 import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
 
 @Injectable()
 export class DriversService {
+  private readonly logger = new Logger(DriversService.name);
+
   constructor(
     @InjectRepository(Driver)
     private readonly driverRepository: Repository<Driver>,
@@ -35,7 +36,7 @@ export class DriversService {
     if (!driverPhoneNumbers.length) {
       return [];
     }
-    console.log(driverPhoneNumbers.map((driver) => driver.phoneNumber).join(','));
+
     const drivers = await this.driversMockupApi.getDrivers({
       $in_field: 'phoneNumber',
       $in: driverPhoneNumbers.map((driver) => driver.phoneNumber).join(','),
@@ -44,7 +45,7 @@ export class DriversService {
     return drivers;
   }
 
-  async findOne(id: string): Promise<DriverDto> {
+  async findOne(id: string) {
     const driver = await this.driverRepository.findOne({ where: { id } });
     if (!driver) {
       return null;

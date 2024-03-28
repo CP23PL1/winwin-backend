@@ -11,10 +11,11 @@ import { ServiceSpotsModule } from 'src/service-spots/service-spots.module';
 import { RedisDriveRequestStore } from './stores/redis-drive-request.store';
 import { DriveRequestsController } from './drive-requests.controller';
 import { GoogleApiModule } from 'src/externals/google-api/google-api.module';
+import { DriveRequestFeedback } from './entities/drive-request-feedback.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([DriveRequest]),
+    TypeOrmModule.forFeature([DriveRequest, DriveRequestFeedback]),
     GoogleApiModule,
     DriversModule,
     ServiceSpotsModule,

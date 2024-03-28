@@ -19,6 +19,7 @@ import { redisStore } from 'cache-manager-ioredis-yet';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { Auth0RolesGuard } from './authorization/providers/auth0/auth0-roles.guard';
 import { GoogleApiModule } from './externals/google-api/google-api.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { GoogleApiModule } from './externals/google-api/google-api.module';
         ttl: configService.get<number>('CACHE_TTL'),
       }),
     }),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot(dataSourceOptions),
     DriversModule,
     GoogleApiModule,

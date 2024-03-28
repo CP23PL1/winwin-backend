@@ -1,7 +1,16 @@
 import { Driver } from 'src/drivers/entities/driver.entity';
 import { Waypoint } from 'src/shared/dtos/place.dto';
 import { User } from 'src/users/entities/user.entity';
-import { Column, CreateDateColumn, Entity, Index, ManyToOne, PrimaryColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  ManyToOne,
+  OneToMany,
+  PrimaryColumn,
+} from 'typeorm';
+import { DriveRequestFeedback } from './drive-request-feedback.entity';
 
 export enum DriveRequestStatus {
   COMPLETED = 'completed',
@@ -45,6 +54,9 @@ export class DriveRequest {
     enumName: 'drive_request_status',
   })
   status: DriveRequestStatus;
+
+  @OneToMany(() => DriveRequestFeedback, (feedback) => feedback.driveRequest)
+  feedback: DriveRequestFeedback[];
 
   @CreateDateColumn()
   createdAt: Date;

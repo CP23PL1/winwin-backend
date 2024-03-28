@@ -1,10 +1,20 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { GoogleApiService } from 'src/externals/google-api/google-api.service';
 import { DriveRequestsService } from './drive-requests.service';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateDriveRequestPreviewDto } from './dto/create-drive-request-preview.dto';
 import { DriveRequestPreviewDto } from './dto/drive-request-preview.dto';
+import { CreateDriveRequestFeedbackDto } from './dto/create-drive-request-feedback.dto';
 
 @ApiTags('Drive Requests')
 @ApiBearerAuth()
@@ -43,5 +53,19 @@ export class DriveRequestsController {
   @Get(':id')
   async findOne(@Param('id') id: string) {
     return this.driveRequestsService.findOne(id);
+  }
+
+  @Post(':id/feedback')
+  async feedback(@Param('id') id: string, @Body() data: CreateDriveRequestFeedbackDto) {
+    const driveRequestExists = await this.driveRequestsService.exists(id);
+
+    if (!driveRequestExists) {
+      throw new NotFoundException({
+        code: 'drive_request_not_found',
+        message: 'Drive request not found',
+      });
+    }
+
+    return this.driveRequestsService.createFeedback(id, data);
   }
 }
