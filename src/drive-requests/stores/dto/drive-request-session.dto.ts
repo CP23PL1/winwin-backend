@@ -18,6 +18,6 @@ export class DriveRequestSession extends PartialType(DriveRequestPreviewDto) {
   origin?: Waypoint;
   destination?: Waypoint;
   status?: DriveRequestSessionStatus;
-  refCode?: string;
+  id?: string;
   createdAt?: string;
 }

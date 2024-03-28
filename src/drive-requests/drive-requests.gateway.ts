@@ -8,12 +8,11 @@ import {
   OnGatewayInit,
   ConnectedSocket,
   WsException,
-  BaseWsExceptionFilter,
 } from '@nestjs/websockets';
 import { Socket, RemoteSocket, Namespace } from 'socket.io';
 import { RequestDriveDto } from './dto/request-drive.dto';
 import { DriversService } from 'src/drivers/drivers.service';
-import { Logger, UseFilters } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { Auth0JwtService } from 'src/authorization/providers/auth0/auth0-jwt.service';
 import { auth0JwtSocketIoMiddleware } from 'src/authorization/providers/auth0/auth0-jwt.middleware';
 import { UsersService } from 'src/users/users.service';
@@ -34,6 +33,8 @@ import {
 import { DriveRequestsService } from './drive-requests.service';
 import { DriveRequestStatus } from './entities/drive-request.entity';
 import { GoogleApiService } from 'src/externals/google-api/google-api.service';
+import { InjectRedis } from '@nestjs-modules/ioredis';
+import Redis from 'ioredis';
 
 @WebSocketGateway({
   namespace: 'drive-request',
@@ -53,6 +54,8 @@ export class DriveRequestsGateway
     private readonly redisDriveRequestStore: RedisDriveRequestStore,
     private readonly driveRequestsService: DriveRequestsService,
     private readonly googleApiService: GoogleApiService,
+    @InjectRedis()
+    private readonly redis: Redis,
   ) {}
 
   @WebSocketServer()
@@ -103,7 +106,7 @@ export class DriveRequestsGateway
     const driverSocket = await this.findDriverSocketToOfferJob(user.id, origin);
 
     const customId = customAlphabet('1234567890', 6);
-    const refCode = `DR-${moment().format('YYMMDD')}-${customId()}`;
+    const id = `DR-${moment().format('YYMMDD')}-${customId()}`;
     const createdAt = moment().toISOString();
 
     const [originDetail, destinationDetail] = await Promise.all([
@@ -113,6 +116,7 @@ export class DriveRequestsGateway
 
     const payload: DriveRequestSession = {
       ...route,
+      id,
       userId: user.id,
       origin: {
         name: originDetail.formatted_address,
@@ -123,14 +127,11 @@ export class DriveRequestsGateway
         location: destination,
       },
       status: DriveRequestSessionStatus.PENDING,
-      refCode,
       createdAt,
     };
 
     const sid = nanoid();
-
     await this.redisDriveRequestStore.saveDriveRequest(sid, payload);
-
     const driver = await this.driversService.findOne(driverSocket.data.user.user_id);
 
     this.server.to(driverSocket.data.user.user_id).emit('job-offer', {
@@ -166,7 +167,7 @@ export class DriveRequestsGateway
     };
 
     await this.redisDriveRequestStore.saveDriveRequest(data.sid, payload);
-
+    this.redis.set(`drivers:${driverSocket.data.user.user_id}:drive-request-session`, data.sid);
     this.server
       .to(data.userId)
       .to(driverSocket.data.user.user_id)
@@ -191,6 +192,7 @@ export class DriveRequestsGateway
       );
       this.server.to(newDriverSocket.id).emit('job-offer', data);
     } catch (error: unknown) {
+      this.redisDriveRequestStore.removeDriveRequest(data.sid);
       this.server.to(data.userId).emit('drive-request-rejected', data);
     }
   }
@@ -218,7 +220,7 @@ export class DriveRequestsGateway
     if (payload.status === DriveRequestSessionStatus.COMPLETED) {
       await this.redisDriveRequestStore.removeDriveRequest(data.driveRequestSid);
       await this.driveRequestsService.create({
-        id: driveRequest.refCode,
+        id: driveRequest.id,
         userId: driveRequest.userId,
         driverId: driveRequest.driverId,
         origin: driveRequest.origin,
@@ -227,7 +229,7 @@ export class DriveRequestsGateway
         paidAmount: driveRequest.total,
         status: DriveRequestStatus.COMPLETED,
       });
-      this.server.to(driveRequest.userId).emit('drive-request-completed');
+      this.server.to(driveRequest.userId).to(driveRequest.driverId).emit('drive-request-completed');
       return;
     } else {
       await this.redisDriveRequestStore.saveDriveRequest(data.driveRequestSid, payload);
@@ -261,6 +263,15 @@ export class DriveRequestsGateway
     this.redisDriveRequestStore.saveMessage(data.driveRequestSid, payload);
   }
 
+  @SubscribeMessage('update-driver-status')
+  async updateDriverStatus(
+    @ConnectedSocket() driverSocket: Socket,
+    @MessageBody() onlineStatus: boolean,
+  ) {
+    driverSocket.data.online = onlineStatus;
+    driverSocket.emit('sync-driver-status', onlineStatus);
+  }
+
   private async findDriverSocketToOfferJob(userId: string, origin: Coordinate) {
     const nearbyServiceSpots = await this.serviceSpotsService.findAllByDistance(
       origin.lat,
@@ -279,7 +290,7 @@ export class DriveRequestsGateway
       let driverSockets = await this.server.in(serviceSpotRoom).fetchSockets();
 
       driverSockets = driverSockets.filter((socket) => {
-        if (!socket.data.cooldown) {
+        if (!socket.data.cooldown && socket.data.online) {
           return true;
         }
         return moment(socket.data.cooldown).isBefore(moment());
@@ -323,6 +334,26 @@ export class DriveRequestsGateway
     }
     const serviceSpotRoom = this.getServiceSpotRoom(driver.serviceSpot.id);
     socket.join(serviceSpotRoom);
+
+    const currentDriveRequestSid = await this.redis.get(
+      `drivers:${socket.data.user.user_id}:drive-request-session`,
+    );
+
+    if (currentDriveRequestSid) {
+      const driveRequest = await this.redisDriveRequestStore.findDriveRequest(
+        currentDriveRequestSid,
+      );
+      const user = await this.usersService.findOne(driveRequest.userId, UserIdentificationType.ID);
+      if (driveRequest) {
+        socket.emit('job-offer', {
+          ...driveRequest,
+          sid: currentDriveRequestSid,
+          user,
+          driver,
+        });
+      }
+    }
+
     this.logger.debug(
       `Driver connected: ${socket.data.user.user_id} and joined ${serviceSpotRoom}`,
     );

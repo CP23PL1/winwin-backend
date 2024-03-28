@@ -109,7 +109,7 @@ export class ServiceSpotsService {
     if (!inviteCode) {
       inviteCode = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 5)();
     }
-    const ttl = 300; // 1 minute (in seconds)
+    const ttl = 900; // 1 minute (in seconds)
     const inviteSession = await this.redis.get(`invitation:${inviteCode}`);
     if (!inviteSession) {
       await Promise.all([

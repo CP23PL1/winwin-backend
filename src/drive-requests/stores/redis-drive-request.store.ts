@@ -42,6 +42,7 @@ export class RedisDriveRequestStore {
     return this.redis
       .hmget(
         `drive-request:${sid}`,
+        'id',
         'userId',
         'driverId',
         'origin',
@@ -50,7 +51,6 @@ export class RedisDriveRequestStore {
         'duration',
         'distanceMeters',
         'status',
-        'refCode',
         'createdAt',
         'priceByDistance',
         'total',
@@ -92,6 +92,7 @@ export class RedisDriveRequestStore {
   }
 
   private deserialize([
+    id,
     userId,
     driverId,
     origin,
@@ -100,13 +101,13 @@ export class RedisDriveRequestStore {
     duration,
     distanceMeters,
     status,
-    refCode,
     createdAt,
     priceByDistance,
     total,
     serviceCharge,
   ]: string[]) {
     return {
+      id,
       userId,
       driverId,
       origin: JSON.parse(origin) as DriveRequestSession['origin'],
@@ -115,7 +116,6 @@ export class RedisDriveRequestStore {
       duration,
       distanceMeters: +distanceMeters,
       status: status as DriveRequestSession['status'],
-      refCode,
       createdAt,
       priceByDistance: +priceByDistance,
       total: +total,

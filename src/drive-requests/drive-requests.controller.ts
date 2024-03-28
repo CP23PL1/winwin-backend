@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestjs/common';
 import { GoogleApiService } from 'src/externals/google-api/google-api.service';
 import { DriveRequestsService } from './drive-requests.service';
 import { ConfigService } from '@nestjs/config';
@@ -38,5 +38,10 @@ export class DriveRequestsController {
     };
 
     return data;
+  }
+
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return this.driveRequestsService.findOne(id);
   }
 }
