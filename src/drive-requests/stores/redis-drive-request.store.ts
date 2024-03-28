@@ -25,9 +25,14 @@ export class RedisDriveRequestStore {
       .then((messages) => messages.map((message) => JSON.parse(message)));
   }
 
-  saveDriveRequest(sid: string, data: Partial<DriveRequestSession>) {
+  async saveDriveRequest(sid: string, data: Partial<DriveRequestSession>) {
     const serializedData = this.serialize(data);
-    return this.redis.hset(`drive-request:${sid}`, serializedData);
+    const ttl = 86400; // 1 day
+    await this.redis
+      .multi()
+      .hset(`drive-request:${sid}`, serializedData)
+      .expire(`drive-request:${sid}`, ttl)
+      .exec();
   }
 
   removeDriveRequest(sid: string) {
@@ -57,26 +62,6 @@ export class RedisDriveRequestStore {
         'serviceCharge',
       )
       .then(this.deserialize);
-  }
-
-  canTransitionTo(currentStatus: DriveRequestSessionStatus, nextStatus: DriveRequestSessionStatus) {
-    const validNextStatuses = this.getDriveRequestSessionStateMachine(currentStatus);
-    return validNextStatuses.includes(nextStatus);
-  }
-
-  getDriveRequestSessionStateMachine(currentStatus: DriveRequestSessionStatus) {
-    switch (currentStatus) {
-      case DriveRequestSessionStatus.PENDING:
-        return [DriveRequestSessionStatus.ON_GOING];
-      case DriveRequestSessionStatus.ON_GOING:
-        return [DriveRequestSessionStatus.ARRIVED, DriveRequestSessionStatus.CANCELLED];
-      case DriveRequestSessionStatus.ARRIVED:
-        return [DriveRequestSessionStatus.PICKED_UP, DriveRequestSessionStatus.CANCELLED];
-      case DriveRequestSessionStatus.PICKED_UP:
-        return [DriveRequestSessionStatus.COMPLETED];
-      default:
-        return [];
-    }
   }
 
   private serialize(data: Partial<DriveRequestSession>) {
@@ -121,5 +106,25 @@ export class RedisDriveRequestStore {
       total: +total,
       serviceCharge: +serviceCharge,
     };
+  }
+
+  canTransitionTo(currentStatus: DriveRequestSessionStatus, nextStatus: DriveRequestSessionStatus) {
+    const validNextStatuses = this.getDriveRequestSessionStateMachine(currentStatus);
+    return validNextStatuses.includes(nextStatus);
+  }
+
+  getDriveRequestSessionStateMachine(currentStatus: DriveRequestSessionStatus) {
+    switch (currentStatus) {
+      case DriveRequestSessionStatus.PENDING:
+        return [DriveRequestSessionStatus.ON_GOING];
+      case DriveRequestSessionStatus.ON_GOING:
+        return [DriveRequestSessionStatus.ARRIVED, DriveRequestSessionStatus.CANCELLED];
+      case DriveRequestSessionStatus.ARRIVED:
+        return [DriveRequestSessionStatus.PICKED_UP, DriveRequestSessionStatus.CANCELLED];
+      case DriveRequestSessionStatus.PICKED_UP:
+        return [DriveRequestSessionStatus.COMPLETED];
+      default:
+        return [];
+    }
   }
 }

@@ -105,14 +105,14 @@ export class DriveRequestsGateway
 
     const driverSocket = await this.findDriverSocketToOfferJob(user.id, origin);
 
-    const customId = customAlphabet('1234567890', 6);
-    const id = `DR-${moment().format('YYMMDD')}-${customId()}`;
-    const createdAt = moment().toISOString();
-
     const [originDetail, destinationDetail] = await Promise.all([
       this.googleApiService.getReverseGeocode(origin),
       this.googleApiService.getReverseGeocode(destination),
     ]);
+    console.log(origin, destination);
+    const customId = customAlphabet('1234567890', 6);
+    const id = `DR-${moment().format('YYMMDD')}-${customId()}`;
+    const createdAt = moment().toISOString();
 
     const payload: DriveRequestSession = {
       ...route,

@@ -92,6 +92,9 @@ jobs:
           echo "REDIS_HOST=${{ secrets.REDIS_HOST }}" >> .env
           echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
           echo "CACHE_TTL=${{ secrets.CACHE_TTL }}" >> .env
+          echo "DRIVE_SERVICE_CHARGE=${{vars.DRIVE_SERVICE_CHARGE}}" >> .env
+          echo "ROUTES_API_KEY=${{ secrets.ROUTES_API_KEY }}" >> .env
+          echo "PLACES_API_KEY=${{ secrets.PLACES_API_KEY }}" >> .env
           touch service-account.json
           echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 -d > service-account.json
 
