@@ -95,6 +95,7 @@ jobs:
           echo "DRIVE_SERVICE_CHARGE=${{vars.DRIVE_SERVICE_CHARGE}}" >> .env
           echo "ROUTES_API_KEY=${{ secrets.ROUTES_API_KEY }}" >> .env
           echo "PLACES_API_KEY=${{ secrets.PLACES_API_KEY }}" >> .env
+          echo "SOCKET_IO_PATH=${{ secrets.SOCKET_IO_PATH }}" >> .env
           touch service-account.json
           echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 -d > service-account.json
 
