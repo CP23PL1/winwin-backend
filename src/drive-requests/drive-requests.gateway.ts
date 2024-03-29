@@ -168,6 +168,7 @@ export class DriveRequestsGateway
 
     await this.redisDriveRequestStore.saveDriveRequest(data.sid, payload);
     this.redis.set(`drivers:${driverSocket.data.user.user_id}:drive-request-session`, data.sid);
+    this.redis.set(`users:${data.userId}:drive-request-session`, data.sid);
     this.server
       .to(data.userId)
       .to(driverSocket.data.user.user_id)
@@ -229,6 +230,8 @@ export class DriveRequestsGateway
         paidAmount: driveRequest.total,
         status: DriveRequestStatus.COMPLETED,
       });
+      this.redis.del(`drivers:${driveRequest.driverId}:drive-request-session`);
+      this.redis.del(`users:${driveRequest.userId}:drive-request-session`);
       this.server.to(driveRequest.userId).to(driveRequest.driverId).emit('drive-request-completed');
       return;
     } else {
@@ -359,8 +362,30 @@ export class DriveRequestsGateway
     );
   }
 
-  private handlePassengerConnection(socket: Socket) {
+  private async handlePassengerConnection(socket: Socket) {
     this.logger.debug(`Passenger connected: ${socket.data.user.user_id}`);
+
+    const currentDriveRequestSid = await this.redis.get(
+      `users:${socket.data.user.user_id}:drive-request-session`,
+    );
+    if (currentDriveRequestSid) {
+      const driveRequest = await this.redisDriveRequestStore.findDriveRequest(
+        currentDriveRequestSid,
+      );
+      if (driveRequest) {
+        const user = await this.usersService.findOne(
+          driveRequest.userId,
+          UserIdentificationType.ID,
+        );
+        const driver = await this.driversService.findOne(driveRequest.driverId);
+        socket.emit('drive-request-created', {
+          ...driveRequest,
+          sid: currentDriveRequestSid,
+          user,
+          driver,
+        });
+      }
+    }
   }
 
   private rejectUnauthorizedClient(socket: Socket, reason: string) {

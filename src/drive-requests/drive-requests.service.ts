@@ -89,26 +89,51 @@ export class DriveRequestsService {
     this.logger.debug('Computing feedback ...');
 
     try {
-      const queryBuilder = queryRunner.manager.createQueryBuilder();
+      const queryBuilder = queryRunner.connection.createQueryBuilder();
       const computedDriverRating = await queryBuilder
         .from(DriveRequestFeedback, 'feedback')
         .leftJoinAndSelect('feedback.driveRequest', 'driveRequest')
         .select('driveRequest.driverId', 'driverId')
         .addSelect('feedback.category', 'category')
         .addSelect('CAST(AVG(feedback.rating)::NUMERIC(3,2) AS FLOAT)', 'rating')
+        .addSelect('CAST(COUNT(feedback.id) AS INT)', 'totalFeedbacks')
         .groupBy('driveRequest.driverId, feedback.category')
-        .getRawMany<Pick<DriverRating, 'driverId' | 'category' | 'rating'>>();
+        .where("feedback.createdAt >= NOW() - INTERVAL '1' DAY")
+        .getRawMany<Pick<DriverRating, 'driverId' | 'category' | 'rating' | 'totalFeedbacks'>>();
 
-      const driverRating = this.dataSource.getRepository(DriverRating);
-      await driverRating.save(computedDriverRating, { chunk: 1000 });
-
+      // const driverRating = this.dataSource.getRepository(DriverRating);
+      await queryBuilder
+        .insert()
+        .into(DriverRating)
+        .values(
+          computedDriverRating.map((driveRequest) => ({
+            driverId: driveRequest.driverId,
+            category: driveRequest.category,
+            rating: driveRequest.rating,
+          })),
+        )
+        .orIgnore()
+        .execute();
+      const promises = [];
+      for (const driverRating of computedDriverRating) {
+        const exe = queryBuilder
+          .update(DriverRating)
+          .where('driverId = :driverId AND category = :category', driverRating)
+          .set({
+            totalFeedbacks: () => `totalFeedbacks + ${driverRating.totalFeedbacks}`,
+          })
+          .execute();
+        promises.push(exe);
+      }
+      await Promise.all(promises);
       await queryRunner.commitTransaction();
-    } catch {
+      this.logger.debug('Feedback computed');
+    } catch (error: any) {
       await queryRunner.rollbackTransaction();
+      console.error(error);
       this.logger.error('Failed to compute feedback, rolling back transaction');
     } finally {
       await queryRunner.release();
-      this.logger.debug('Feedback computed');
     }
   }
 }

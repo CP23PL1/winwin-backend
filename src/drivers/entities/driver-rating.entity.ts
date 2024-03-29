@@ -5,20 +5,20 @@ import {
 import {
   Column,
   Entity,
-  Index,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
   UpdateDateColumn,
 } from 'typeorm';
 import { Driver } from './driver.entity';
 
 @Entity()
+@Unique(['driverId', 'category'])
 export class DriverRating {
   @PrimaryGeneratedColumn('increment')
   id: number;
 
   @Column()
-  @Index()
   driverId: string;
 
   @ManyToOne(() => Driver, (driver) => driver.ratings, {
@@ -39,6 +39,11 @@ export class DriverRating {
     enum: feedbackCategoties,
   })
   category: FeedbackCategory;
+
+  @Column({
+    default: 0,
+  })
+  totalFeedbacks: number;
 
   @UpdateDateColumn()
   updatedAt: Date;
