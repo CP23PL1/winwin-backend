@@ -38,7 +38,6 @@ async function bootstrap() {
   app.enableCors({
     origin: '*',
   });
-
   // API Documentation
   const documentBuilder = new DocumentBuilder()
     .setTitle('WinWin API')

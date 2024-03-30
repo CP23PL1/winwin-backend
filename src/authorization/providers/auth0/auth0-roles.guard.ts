@@ -1,15 +1,27 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { FastifyRequest } from 'fastify';
-import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
+import { AUTH0_ROLES_KEY } from 'src/authorization/decorators/auth0-roles.decorator';
+import { IS_PUBLIC } from 'src/authorization/decorators/public.decorator';
+import { Role } from 'src/authorization/dto/user-info.dto';
 
 @Injectable()
 export class Auth0RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const roles = this.reflector.get(Auth0Roles, context.getHandler());
-    if (!roles) {
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) return true;
+
+    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(AUTH0_ROLES_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (!requiredRoles) {
       return true;
     }
     const request = context.switchToHttp().getRequest<FastifyRequest>();
@@ -19,7 +31,7 @@ export class Auth0RolesGuard implements CanActivate {
       return false;
     }
 
-    return this.matchRoles(roles, user['cp23pl1/roles']);
+    return this.matchRoles(requiredRoles, user['cp23pl1/roles']);
   }
 
   private matchRoles(roles: string[], userRoles: string[]): boolean {

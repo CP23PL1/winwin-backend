@@ -25,10 +25,11 @@ import { FindOneUserQueryDto, UserIdentificationType } from './dtos/find-one-use
 import { FastifyRequest } from 'fastify';
 import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
 import { Role } from 'src/authorization/dto/user-info.dto';
+import { Paginate, PaginateQuery } from 'nestjs-paginate';
 
 @ApiTags('Users')
 @ApiBearerAuth()
-@Auth0Roles([Role.Passenger])
+@Auth0Roles(Role.Passenger)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -102,5 +103,10 @@ export class UsersController {
     }
 
     return user;
+  }
+
+  @Get('me/drive-requests')
+  async getMyDriveRequests(@Req() req: FastifyRequest, @Paginate() query: PaginateQuery) {
+    return this.usersService.findAllDriveRequestsByUserId(req.user.user_id, query);
   }
 }

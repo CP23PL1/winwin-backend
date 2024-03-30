@@ -48,7 +48,7 @@ export class ServiceSpotsController {
     private readonly driversService: DriversService,
   ) {}
 
-  @Auth0Roles([Role.Driver])
+  @Auth0Roles(Role.Driver)
   @HttpCode(HttpStatus.CREATED)
   @ApiCreatedResponse({
     description: 'The record has been successfully created.',
@@ -116,7 +116,7 @@ export class ServiceSpotsController {
     return drivers;
   }
 
-  @Auth0Roles([Role.Driver])
+  @Auth0Roles(Role.Driver)
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     type: ServiceSpotDto,
@@ -158,7 +158,7 @@ export class ServiceSpotsController {
     return this.serviceSpotsService.remove(id);
   }
 
-  @Auth0Roles([Role.Driver])
+  @Auth0Roles(Role.Driver)
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     description: 'Generate invite code for service spot.',

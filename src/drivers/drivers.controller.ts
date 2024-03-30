@@ -24,13 +24,13 @@ import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/driver
 import { Public } from 'src/authorization/decorators/public.decorator';
 import { ServiceSpotsService } from 'src/service-spots/service-spots.service';
 import { JoinServiceSpot } from 'src/service-spots/dto/join-service-spot.dto';
-import { Role } from 'src/authorization/dto/user-info.dto';
-import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
 import { Paginate, PaginateQuery } from 'nestjs-paginate';
+import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
+import { Role } from 'src/authorization/dto/user-info.dto';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
-@Auth0Roles([Role.Driver])
+@Auth0Roles(Role.Driver)
 @Controller('drivers')
 export class DriversController {
   constructor(

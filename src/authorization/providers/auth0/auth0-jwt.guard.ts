@@ -1,12 +1,27 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Inject,
+  Injectable,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC } from '../../decorators/public.decorator';
 import { Auth0JwtService } from './auth0-jwt.service';
-import { Socket } from 'socket.io';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class Auth0JwtGuard implements CanActivate {
-  constructor(private reflector: Reflector, private auth0JwtService: Auth0JwtService) {}
+  private readonly logger = new Logger(Auth0JwtGuard.name);
+
+  constructor(
+    private reflector: Reflector,
+    private auth0JwtService: Auth0JwtService,
+    @Inject(CACHE_MANAGER)
+    private cacheManager: Cache,
+  ) {}
 
   async canActivate(context: ExecutionContext) {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
@@ -35,9 +50,20 @@ export class Auth0JwtGuard implements CanActivate {
     }
 
     try {
-      await this.auth0JwtService.verify(token);
-      const user = await this.auth0JwtService.getUserInfo(token);
-      request.user = user;
+      const valid = await this.auth0JwtService.verify(token);
+      if (!valid) {
+        throw new UnauthorizedException();
+      }
+      const decoded = this.auth0JwtService.decode(token);
+      const cachedUserInfo = await this.cacheManager.get(decoded.sub);
+      if (cachedUserInfo) {
+        this.logger.debug('User info retrieved from cache');
+        request.user = cachedUserInfo;
+      } else {
+        const user = await this.auth0JwtService.getUserInfo(token);
+        request.user = user;
+        await this.cacheManager.set(decoded.sub, user, 3600);
+      }
     } catch {
       throw new UnauthorizedException();
     }
