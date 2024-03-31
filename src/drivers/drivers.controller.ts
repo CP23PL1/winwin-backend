@@ -5,7 +5,6 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param,
   Patch,
   Post,
   Req,
@@ -27,6 +26,7 @@ import { JoinServiceSpot } from 'src/service-spots/dto/join-service-spot.dto';
 import { Paginate, PaginateQuery } from 'nestjs-paginate';
 import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
 import { Role } from 'src/authorization/dto/user-info.dto';
+import { DriverException } from './constants/exceptions';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
@@ -55,10 +55,7 @@ export class DriversController {
     );
 
     if (!driverInfo) {
-      throw new BadRequestException({
-        code: 'unregistered_driver',
-        message: 'This phone number is not registered as a driver',
-      });
+      throw new BadRequestException(DriverException.UnregisteredDriver);
     }
   }
 
@@ -78,10 +75,7 @@ export class DriversController {
     );
 
     if (!driverInfo) {
-      throw new BadRequestException({
-        code: 'unregistered_driver',
-        message: 'This phone number is not registered as a driver',
-      });
+      throw new BadRequestException(DriverException.UnregisteredDriver);
     }
 
     const driver = await this.driversService.findOne(req.user.user_id);
