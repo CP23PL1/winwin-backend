@@ -27,7 +27,9 @@ export class ServiceSpotDto {
   @ApiProperty()
   address: SubDistrict;
 
-  @ApiProperty()
+  @ApiProperty({
+    type: () => DriverDto,
+  })
   serviceSpotOwner: DriverDto;
 
   @ApiProperty()

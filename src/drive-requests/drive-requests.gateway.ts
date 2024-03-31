@@ -132,7 +132,7 @@ export class DriveRequestsGateway
 
     const sid = nanoid();
     await this.redisDriveRequestStore.saveDriveRequest(sid, payload);
-    const driver = await this.driversService.findOne(driverSocket.data.user.user_id);
+    const driver = await this.driversService.findOneById(driverSocket.data.user.user_id);
 
     this.server.to(driverSocket.data.user.user_id).emit('job-offer', {
       ...payload,
@@ -328,7 +328,7 @@ export class DriveRequestsGateway
   private async handleDriverConnection(socket: Socket) {
     let driver: DriverDto | null = null;
     try {
-      driver = await this.driversService.findOne(socket.data.user.user_id);
+      driver = await this.driversService.findOneWithInfo(socket.data.user.user_id);
     } catch (error: any) {
       throw this.rejectUnauthorizedClient(socket, 'An error occurred getting driver info');
     }
@@ -377,7 +377,7 @@ export class DriveRequestsGateway
           driveRequest.userId,
           UserIdentificationType.ID,
         );
-        const driver = await this.driversService.findOne(driveRequest.driverId);
+        const driver = await this.driversService.findOneById(driveRequest.driverId);
         socket.emit('drive-request-created', {
           ...driveRequest,
           sid: currentDriveRequestSid,

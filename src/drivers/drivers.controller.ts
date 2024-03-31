@@ -23,10 +23,14 @@ import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/driver
 import { Public } from 'src/authorization/decorators/public.decorator';
 import { ServiceSpotsService } from 'src/service-spots/service-spots.service';
 import { JoinServiceSpot } from 'src/service-spots/dto/join-service-spot.dto';
-import { Paginate, PaginateQuery } from 'nestjs-paginate';
+import { Paginate, PaginateQuery, PaginatedSwaggerDocs } from 'nestjs-paginate';
 import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
 import { Role } from 'src/authorization/dto/user-info.dto';
 import { DriverException } from './constants/exceptions';
+import { DriverDto } from './dtos/driver.dto';
+import { plainToInstance } from 'class-transformer';
+import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
+import { driveRequestPaginateConfig } from 'src/drive-requests/config/paginate.config';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
@@ -62,13 +66,13 @@ export class DriversController {
   @HttpCode(HttpStatus.OK)
   @ApiOkResponse({
     description: 'Driver information successfully retrieved.',
-    type: DriverVerifyDto,
+    type: () => DriverDto,
   })
   @ApiBadRequestResponse({
     description: 'This phone number is not registered as a driver',
   })
   @Get('me')
-  async getMyDriverInfo(@Req() req: FastifyRequest) {
+  async getMyDriverInfo(@Req() req: FastifyRequest): Promise<DriverDto> {
     const driverInfo = await this.driversMockupApiService.getDriver(
       req.user.phone_number,
       'phone_number',
@@ -78,20 +82,31 @@ export class DriversController {
       throw new BadRequestException(DriverException.UnregisteredDriver);
     }
 
-    const driver = await this.driversService.findOne(req.user.user_id);
+    let driver = await this.driversService.findOneById(req.user.user_id, {
+      loadEagerRelations: false,
+      select: {
+        id: true,
+        serviceSpot: {
+          id: true,
+          name: true,
+          serviceSpotOwnerId: true,
+        },
+      },
+      relations: ['serviceSpot'],
+    });
 
-    if (driver) {
-      return driver;
+    if (!driver) {
+      driver = await this.driversService.create({
+        id: req.user.user_id,
+        phoneNumber: req.user.phone_number,
+      });
     }
 
-    return this.driversService.create({
-      id: req.user.user_id,
-      phoneNumber: req.user.phone_number,
-    });
+    return plainToInstance(DriverDto, { ...driver, info: driverInfo });
   }
 
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiNoContentResponse({
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
     description: 'Driver successfully joined service spot.',
   })
   @ApiBadRequestResponse({
@@ -102,19 +117,28 @@ export class DriversController {
     const serviceSpotId = await this.serviceSpotsService.findServiceSpotByInviteCode(data.code);
 
     if (!serviceSpotId) {
-      throw new BadRequestException('Invite code is invalid or expired');
+      throw new BadRequestException(DriverException.InvalidInviteCode);
     }
 
     await this.driversService.update(req.user.user_id, {
       serviceSpot: {
-        id: parseInt(serviceSpotId),
+        id: serviceSpotId,
       },
     });
+
+    return {
+      message: 'Driver successfully joined service spot',
+    };
   }
 
   @HttpCode(HttpStatus.OK)
+  @PaginatedSwaggerDocs(DriveRequest, driveRequestPaginateConfig)
   @Get('me/drive-requests')
   async getDriveRequests(@Paginate() query: PaginateQuery, @Req() req: FastifyRequest) {
-    return this.driversService.findAllDriveRequestsByDriverId(req.user.user_id, query);
+    return this.driversService.findAllDriveRequestsByDriverId(
+      req.user.user_id,
+      query,
+      driveRequestPaginateConfig,
+    );
   }
 }

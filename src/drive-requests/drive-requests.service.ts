@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DriveRequest } from './entities/drive-request.entity';
-import { DataSource, DeepPartial, Repository } from 'typeorm';
-import { DriversService } from 'src/drivers/drivers.service';
+import { DataSource, DeepPartial, FindOneOptions, Repository } from 'typeorm';
 import { PaginateQuery, paginate } from 'nestjs-paginate';
 import { CreateDriveRequestFeedbackDto } from './dto/create-drive-request-feedback.dto';
 import { DriveRequestFeedback } from './entities/drive-request-feedback.entity';
@@ -18,7 +17,6 @@ export class DriveRequestsService {
     private driveRequestRepository: Repository<DriveRequest>,
     @InjectRepository(DriveRequestFeedback)
     private driveRequestFeedbackRepository: Repository<DriveRequestFeedback>,
-    private driversService: DriversService,
     private dataSource: DataSource,
   ) {}
 
@@ -34,13 +32,30 @@ export class DriveRequestsService {
     });
   }
 
-  async findOne(id: string) {
-    const driveRequest = await this.driveRequestRepository.findOne({ where: { id } });
-    const driver = await this.driversService.findOne(driveRequest.driverId);
-    return {
-      ...driveRequest,
-      driver,
-    };
+  async findOne(id: string, options?: FindOneOptions<DriveRequest>) {
+    const driveRequest = await this.driveRequestRepository.findOne({
+      ...(options || {}),
+      where: { id },
+    });
+    if (!driveRequest) {
+      return null;
+    }
+    return driveRequest;
+  }
+
+  async findOneOwned(id: string, userId: string) {
+    const driveRequest = await this.driveRequestRepository
+      .createQueryBuilder('driveRequest')
+      .where(
+        'driveRequest.id = :id AND (driveRequest.driverId = :userId OR driveRequest.userId = :userId)',
+        { id, userId },
+      )
+      .getOne();
+
+    if (!driveRequest) {
+      return null;
+    }
+    return driveRequest;
   }
 
   async exists(id: string) {

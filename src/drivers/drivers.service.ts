@@ -2,10 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
 import { Driver } from './entities/driver.entity';
-import { DeepPartial, FindOptionsWhere, Repository } from 'typeorm';
+import { DeepPartial, FindOneOptions, FindOptionsWhere, Repository } from 'typeorm';
 import { CreateDriverDto } from './dtos/create-driver.dto';
-import { PaginateQuery, paginate } from 'nestjs-paginate';
+import { PaginateConfig, PaginateQuery, paginate } from 'nestjs-paginate';
 import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
+import { plainToInstance } from 'class-transformer';
+import { DriverDto } from './dtos/driver.dto';
 
 @Injectable()
 export class DriversService {
@@ -19,9 +21,13 @@ export class DriversService {
     private readonly driversMockupApi: DriversMockupApiService,
   ) {}
 
-  async findAllDriveRequestsByDriverId(driverId: string, query: PaginateQuery) {
+  async findAllDriveRequestsByDriverId(
+    driverId: string,
+    query: PaginateQuery,
+    config: PaginateConfig<DriveRequest>,
+  ) {
     return paginate(query, this.driveRequestRepository, {
-      sortableColumns: ['id', 'status', 'createdAt'],
+      ...config,
       where: { driverId },
     });
   }
@@ -45,29 +51,41 @@ export class DriversService {
     return drivers;
   }
 
-  async findOne(id: string) {
-    const driver = await this.driverRepository.findOne({ where: { id } });
-    if (!driver) {
-      return null;
-    }
-    const driverInfo = await this.driversMockupApi.getDriver(driver.phoneNumber, 'phone_number');
-    return {
-      ...driver,
-      info: driverInfo,
-    };
+  async findOneById(id: Driver['id'], options: FindOneOptions<Driver> = {}) {
+    return this.driverRepository.findOne({
+      ...options,
+      where: { id },
+    });
   }
 
   async findOneBy(where: FindOptionsWhere<Driver>) {
     return this.driverRepository.findOne({ where });
   }
 
-  async create(data: CreateDriverDto) {
-    const newDriver = await this.driverRepository.save(data);
-    return this.findOne(newDriver.id);
+  async findOneWithInfo(id: Driver['id'], options: FindOneOptions<Driver> = {}) {
+    const driver = await this.driverRepository.findOne({
+      ...options,
+      select: {
+        ...options.select,
+        phoneNumber: true,
+      },
+      where: { id },
+    });
+
+    if (!driver) {
+      return null;
+    }
+
+    const driverInfo = await this.driversMockupApi.getDriver(driver.phoneNumber, 'phone_number');
+
+    return plainToInstance(DriverDto, { ...driver, info: driverInfo });
+  }
+
+  create(data: CreateDriverDto) {
+    return this.driverRepository.save(data);
   }
 
   async update(id: string, data: DeepPartial<Driver>) {
-    await this.driverRepository.update(id, data);
-    return this.findOne(id);
+    return this.driverRepository.update(id, data);
   }
 }

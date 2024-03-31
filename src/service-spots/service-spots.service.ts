@@ -127,16 +127,16 @@ export class ServiceSpotsService {
     const inviteSession = `invitation:${code}`;
     const serviceSpotId = await this.redis.get(inviteSession);
     if (!serviceSpotId) {
-      throw new NotFoundException('Invite code is invalid or expired');
+      return null;
     }
-    return serviceSpotId;
+    return +serviceSpotId;
   }
 
   async mapToDto(serviceSpot: ServiceSpot): Promise<ServiceSpotDto> {
     const address = await this.addressesService.findOneAddressBySubDistrictId(
       serviceSpot.subDistrictId,
     );
-    const driver = await this.driversService.findOne(serviceSpot.serviceSpotOwnerId);
+    const driver = await this.driversService.findOneWithInfo(serviceSpot.serviceSpotOwnerId);
     const priceRateImageUrl = await this.getImageUrl(serviceSpot.id, 'price_rate_image');
     return {
       id: serviceSpot.id,

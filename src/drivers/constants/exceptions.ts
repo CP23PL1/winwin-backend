@@ -5,4 +5,8 @@ export class DriverException {
     code: 'unregistered_driver',
     message: 'This phone number is not registered as a driver',
   };
+  static readonly InvalidInviteCode: ExceptionPayload = {
+    code: 'invalid_invite_code',
+    message: 'Invalid invite code or expired',
+  };
 }
