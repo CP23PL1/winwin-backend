@@ -9,4 +9,8 @@ export class DriverException {
     code: 'invalid_invite_code',
     message: 'Invalid invite code or expired',
   };
+  static readonly DriveRequestNotFound: ExceptionPayload = {
+    code: 'drive_request_not_found',
+    message: 'Drive request not found',
+  };
 }

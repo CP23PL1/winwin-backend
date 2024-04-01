@@ -1,13 +1,11 @@
 import {
   Body,
   Controller,
-  Get,
   HttpCode,
   HttpStatus,
   NotFoundException,
   Param,
   Post,
-  Req,
 } from '@nestjs/common';
 import { GoogleApiService } from 'src/externals/google-api/google-api.service';
 import { DriveRequestsService } from './drive-requests.service';
@@ -16,11 +14,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateDriveRequestPreviewDto } from './dto/create-drive-request-preview.dto';
 import { DriveRequestPreviewDto } from './dto/drive-request-preview.dto';
 import { CreateDriveRequestFeedbackDto } from './dto/create-drive-request-feedback.dto';
-import { DriveRequestException } from './constants/exceptions';
-import { DriveRequestDto } from './dto/drive-request.dto';
-import { FastifyRequest } from 'fastify';
 import { DriversService } from 'src/drivers/drivers.service';
-import { plainToInstance } from 'class-transformer';
 
 @ApiTags('Drive Requests')
 @ApiBearerAuth()
@@ -55,32 +49,6 @@ export class DriveRequestsController {
     };
 
     return data;
-  }
-
-  @Get(':id')
-  async findOne(@Req() req: FastifyRequest, @Param('id') id: string): Promise<DriveRequestDto> {
-    const driveRequest = await this.driveRequestsService.findOneOwned(id, req.user.user_id);
-    console.log(driveRequest);
-    if (!driveRequest) {
-      throw new NotFoundException(DriveRequestException.NotFound);
-    }
-
-    const driver = await this.driversService.findOneWithInfo(driveRequest.driverId, {
-      loadEagerRelations: false,
-      select: {
-        id: true,
-        serviceSpot: {
-          id: true,
-          name: true,
-        },
-      },
-      relations: ['serviceSpot'],
-    });
-
-    return plainToInstance(DriveRequestDto, {
-      ...driveRequest,
-      driver,
-    });
   }
 
   @Post(':id/feedback')

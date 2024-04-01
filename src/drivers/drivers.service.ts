@@ -32,6 +32,19 @@ export class DriversService {
     });
   }
 
+  async findOneDriveRequestByDriverId(driverId: string, driveRequestId: string) {
+    return this.driveRequestRepository.findOne({
+      loadEagerRelations: false,
+      where: {
+        id: driveRequestId,
+        driverId,
+      },
+      relations: {
+        user: true,
+      },
+    });
+  }
+
   async findAllInServiceSpot(serviceSpotId: number) {
     const driverPhoneNumbers = await this.driverRepository.find({
       select: ['phoneNumber'],
@@ -66,7 +79,8 @@ export class DriversService {
     const driver = await this.driverRepository.findOne({
       ...options,
       select: {
-        ...options.select,
+        ...(options?.select || {}),
+        id: true,
         phoneNumber: true,
       },
       where: { id },

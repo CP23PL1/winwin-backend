@@ -5,6 +5,8 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
+  Param,
   Patch,
   Post,
   Req,
@@ -31,6 +33,7 @@ import { DriverDto } from './dtos/driver.dto';
 import { plainToInstance } from 'class-transformer';
 import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
 import { driveRequestPaginateConfig } from 'src/drive-requests/config/paginate.config';
+import { DriveRequestDto } from 'src/drive-requests/dto/drive-request.dto';
 
 @ApiTags('Drivers')
 @ApiBearerAuth()
@@ -140,5 +143,19 @@ export class DriversController {
       query,
       driveRequestPaginateConfig,
     );
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    type: () => DriveRequestDto,
+    description: 'Drive request successfully retrieved.',
+  })
+  @Get('me/drive-requests/:id')
+  async getDriveRequest(@Req() req: FastifyRequest, @Param('id') id: string) {
+    const driveRequest = this.driversService.findOneDriveRequestByDriverId(req.user.user_id, id);
+    if (!driveRequest) {
+      throw new NotFoundException(DriverException.DriveRequestNotFound);
+    }
+    return plainToInstance(DriveRequestDto, driveRequest);
   }
 }

@@ -6,6 +6,9 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { PaginateQuery, paginate } from 'nestjs-paginate';
 import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
+import { DriversService } from 'src/drivers/drivers.service';
+import { plainToInstance } from 'class-transformer';
+import { DriveRequestDto } from 'src/drive-requests/dto/drive-request.dto';
 
 @Injectable()
 export class UsersService {
@@ -14,6 +17,7 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(DriveRequest)
     private readonly driveRequestRepository: Repository<DriveRequest>,
+    private readonly driversService: DriversService,
   ) {}
   create(userId: string, createUserDto: CreateUserDto) {
     return this.userRepository.save({
@@ -39,6 +43,25 @@ export class UsersService {
       maxLimit: 10,
       sortableColumns: ['createdAt', 'status'],
       defaultSortBy: [['createdAt', 'DESC']],
+    });
+  }
+
+  async findOneDriveRequestByUserId(userId: string, driveRequestId: string) {
+    const driveRequest = await this.driveRequestRepository.findOne({
+      loadEagerRelations: false,
+      where: {
+        id: driveRequestId,
+        userId,
+      },
+    });
+
+    const driver = await this.driversService.findOneWithInfo(driveRequest.driverId, {
+      loadEagerRelations: false,
+    });
+
+    return plainToInstance(DriveRequestDto, {
+      ...driveRequest,
+      driver,
     });
   }
 }

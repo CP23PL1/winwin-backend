@@ -109,4 +109,16 @@ export class UsersController {
   async getMyDriveRequests(@Req() req: FastifyRequest, @Paginate() query: PaginateQuery) {
     return this.usersService.findAllDriveRequestsByUserId(req.user.user_id, query);
   }
+
+  @Get('me/drive-requests/:id')
+  async getMyDriveRequest(@Req() req: FastifyRequest, @Param('id') id: string) {
+    const driveRequest = await this.usersService.findOneDriveRequestByUserId(req.user.user_id, id);
+    if (!driveRequest) {
+      throw new BadRequestException({
+        code: 'drive_request_not_found',
+        message: 'Drive request not found',
+      });
+    }
+    return driveRequest;
+  }
 }
