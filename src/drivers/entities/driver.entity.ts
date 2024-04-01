@@ -21,9 +21,8 @@ export class Driver {
   phoneNumber: string;
 
   @ManyToOne(() => ServiceSpot, (serviceSpot) => serviceSpot.serviceSpotOwner, {
-    onDelete: 'CASCADE',
-    onUpdate: 'CASCADE',
-    eager: true,
+    onDelete: 'SET NULL',
+    nullable: true,
   })
   @Index()
   serviceSpot: ServiceSpot;

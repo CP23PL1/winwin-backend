@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
 import { Driver } from './entities/driver.entity';
-import { DeepPartial, FindOneOptions, FindOptionsWhere, Repository } from 'typeorm';
+import { DeepPartial, FindOneOptions, FindOptionsWhere, Repository, Not } from 'typeorm';
 import { CreateDriverDto } from './dtos/create-driver.dto';
 import { PaginateConfig, PaginateQuery, paginate } from 'nestjs-paginate';
 import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
@@ -45,23 +45,23 @@ export class DriversService {
     });
   }
 
-  async findAllInServiceSpot(serviceSpotId: number) {
-    const driverPhoneNumbers = await this.driverRepository.find({
-      select: ['phoneNumber'],
-      where: { serviceSpot: { id: serviceSpotId } },
-      loadEagerRelations: false,
-    });
-
-    if (!driverPhoneNumbers.length) {
+  async findAllDriversInServiceSpot(serviceSpotId: number) {
+    const drivers = await this.driverRepository
+      .createQueryBuilder('driver')
+      .select('driver.phoneNumber')
+      .leftJoin('driver.serviceSpot', 'serviceSpot')
+      .where('serviceSpot.id = :serviceSpotId AND driver.id <> serviceSpot.serviceSpotOwnerId', {
+        serviceSpotId,
+      })
+      .getMany();
+    if (drivers.length <= 0) {
       return [];
     }
-
-    const drivers = await this.driversMockupApi.getDrivers({
+    const driverInfos = await this.driversMockupApi.getDrivers({
       $in_field: 'phoneNumber',
-      $in: driverPhoneNumbers.map((driver) => driver.phoneNumber).join(','),
+      $in: drivers.map((driver) => driver.phoneNumber).join(','),
     });
-
-    return drivers;
+    return driverInfos;
   }
 
   async findOneById(id: Driver['id'], options: FindOneOptions<Driver> = {}) {

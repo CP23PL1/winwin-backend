@@ -4,7 +4,6 @@ import {
   Post,
   Patch,
   Param,
-  Delete,
   Body,
   Query,
   ParseIntPipe,
@@ -38,6 +37,8 @@ import { ServiceSpotInviteDto } from './dto/service-spot-invite.dto';
 import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
 import { Role } from 'src/authorization/dto/user-info.dto';
 import { DriversService } from 'src/drivers/drivers.service';
+import { ServiceSpotException } from './constants/exceptions';
+import { plainToInstance } from 'class-transformer';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
@@ -69,13 +70,15 @@ export class ServiceSpotsController {
 
     try {
       const newServiceSpot = await this.serviceSpotsService.create(data, files);
-      return this.serviceSpotsService.mapToDto(newServiceSpot);
+      return plainToInstance(ServiceSpotDto, newServiceSpot, { excludePrefixes: ['_'] });
     } catch (error: any) {
       switch (error.code) {
         case '23505':
-          throw new ConflictException(`Service spot with name ${data.name}  already exists`);
+          throw new ConflictException(ServiceSpotException.AlreadyExist(data.name));
         case '23503':
-          throw new BadRequestException(`Sub district with id ${data.subDistrictId} not found`);
+          throw new BadRequestException(
+            ServiceSpotException.SubDistrictNotFound(data.subDistrictId),
+          );
         default:
           throw error;
       }
@@ -105,15 +108,22 @@ export class ServiceSpotsController {
   @Public()
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
-    const serviceSpot = await this.serviceSpotsService.findOne(id);
+    const serviceSpot = await this.serviceSpotsService.findOne(id, {
+      relations: {
+        subDistrict: {
+          district: {
+            province: true,
+          },
+        },
+      },
+    });
     return this.serviceSpotsService.mapToDto(serviceSpot);
   }
 
   @HttpCode(HttpStatus.OK)
   @Get(':id/drivers')
-  async findDrivers(@Param('id', ParseIntPipe) id: number) {
-    const drivers = await this.driversService.findAllInServiceSpot(id);
-    return drivers;
+  findDrivers(@Param('id', ParseIntPipe) id: number) {
+    return this.driversService.findAllDriversInServiceSpot(id);
   }
 
   @Auth0Roles(Role.Driver)
@@ -147,16 +157,16 @@ export class ServiceSpotsController {
     return this.serviceSpotsService.mapToDto(updatedServiceSpot);
   }
 
-  @ApiOkResponse({
-    description: 'Delete service spot by service spot id.',
-  })
-  @ApiNotFoundResponse({
-    description: 'Service spot not found.',
-  })
-  @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.serviceSpotsService.remove(id);
-  }
+  // @ApiOkResponse({
+  //   description: 'Delete service spot by service spot id.',
+  // })
+  // @ApiNotFoundResponse({
+  //   description: 'Service spot not found.',
+  // })
+  // @Delete(':id')
+  // remove(@Param('id', ParseIntPipe) id: number) {
+  //   return this.serviceSpotsService.remove(id);
+  // }
 
   @Auth0Roles(Role.Driver)
   @HttpCode(HttpStatus.OK)

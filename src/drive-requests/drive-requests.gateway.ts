@@ -35,6 +35,7 @@ import { DriveRequestStatus } from './entities/drive-request.entity';
 import { GoogleApiService } from 'src/externals/google-api/google-api.service';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
+import { Driver } from 'src/drivers/entities/driver.entity';
 
 @WebSocketGateway({
   namespace: 'drive-request',
@@ -132,7 +133,7 @@ export class DriveRequestsGateway
 
     const sid = nanoid();
     await this.redisDriveRequestStore.saveDriveRequest(sid, payload);
-    const driver = await this.driversService.findOneById(driverSocket.data.user.user_id);
+    const driver = await this.driversService.findOneWithInfo(driverSocket.data.user.user_id);
 
     this.server.to(driverSocket.data.user.user_id).emit('job-offer', {
       ...payload,
@@ -165,7 +166,7 @@ export class DriveRequestsGateway
       status: DriveRequestSessionStatus.ON_GOING,
       driverId: driverSocket.data.user.user_id,
     };
-
+    console.log(data);
     await this.redisDriveRequestStore.saveDriveRequest(data.sid, payload);
     this.redis.set(`drivers:${driverSocket.data.user.user_id}:drive-request-session`, data.sid);
     this.redis.set(`users:${data.userId}:drive-request-session`, data.sid);
@@ -326,9 +327,20 @@ export class DriveRequestsGateway
   }
 
   private async handleDriverConnection(socket: Socket) {
-    let driver: DriverDto | null = null;
+    let driver: Driver | null = null;
     try {
-      driver = await this.driversService.findOneWithInfo(socket.data.user.user_id);
+      driver = await this.driversService.findOneById(socket.data.user.user_id, {
+        loadEagerRelations: false,
+        select: {
+          id: true,
+          serviceSpot: {
+            id: true,
+          },
+        },
+        relations: {
+          serviceSpot: true,
+        },
+      });
     } catch (error: any) {
       throw this.rejectUnauthorizedClient(socket, 'An error occurred getting driver info');
     }
@@ -346,13 +358,14 @@ export class DriveRequestsGateway
       const driveRequest = await this.redisDriveRequestStore.findDriveRequest(
         currentDriveRequestSid,
       );
+      const driverWithInfo = await this.driversService.findOneWithInfo(socket.data.user.user_id);
       const user = await this.usersService.findOne(driveRequest.userId, UserIdentificationType.ID);
       if (driveRequest) {
         socket.emit('job-offer', {
           ...driveRequest,
           sid: currentDriveRequestSid,
           user,
-          driver,
+          driver: driverWithInfo,
         });
       }
     }
@@ -377,7 +390,7 @@ export class DriveRequestsGateway
           driveRequest.userId,
           UserIdentificationType.ID,
         );
-        const driver = await this.driversService.findOneById(driveRequest.driverId);
+        const driver = await this.driversService.findOneWithInfo(driveRequest.driverId);
         socket.emit('drive-request-created', {
           ...driveRequest,
           sid: currentDriveRequestSid,

@@ -3,7 +3,7 @@ import { CreateServiceSpot, CreateServiceSpotFiles } from './dto/create-service-
 import { UpdateServiceSpot } from './dto/update-service-spot.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ServiceSpot } from './entities/service-spot.entity';
-import { Repository } from 'typeorm';
+import { FindOneOptions, FindOptions, Repository } from 'typeorm';
 import { ServiceSpotDto } from './dto/service-spot.dto';
 import { AddressesService } from 'src/addresses/addresses.service';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
@@ -12,6 +12,7 @@ import { customAlphabet } from 'nanoid';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
 import { ServiceSpotInviteDto } from './dto/service-spot-invite.dto';
+import { instanceToPlain } from 'class-transformer';
 
 @Injectable()
 export class ServiceSpotsService {
@@ -19,7 +20,6 @@ export class ServiceSpotsService {
     @InjectRepository(ServiceSpot)
     private readonly serviceSpotRepo: Repository<ServiceSpot>,
     private readonly driversService: DriversService,
-    private readonly addressesService: AddressesService,
     @InjectFirebaseAdmin()
     private readonly firebase: FirebaseAdmin,
     @InjectRedis()
@@ -29,8 +29,14 @@ export class ServiceSpotsService {
   create(data: CreateServiceSpot, files: CreateServiceSpotFiles) {
     const bucket = this.firebase.storage.bucket();
     return this.serviceSpotRepo.manager.transaction(async (manager) => {
+      const driver = await this.driversService.findOneById(data.serviceSpotOwnerId);
+      if (!driver) {
+        throw new Error('Driver not found');
+      }
       const newServiceSpot = this.serviceSpotRepo.create(data);
       await manager.save(newServiceSpot);
+      driver.serviceSpot = newServiceSpot;
+      await manager.save(driver);
       const path = `service-spots/${newServiceSpot.id}/images`;
       await bucket
         .file(`${path}/price_rate_image`)
@@ -66,8 +72,8 @@ export class ServiceSpotsService {
     }));
   }
 
-  async findOne(id: number) {
-    const serviceSpot = await this.serviceSpotRepo.findOne({ where: { id } });
+  async findOne(id: number, options: FindOneOptions<ServiceSpot> = {}) {
+    const serviceSpot = await this.serviceSpotRepo.findOne({ ...options, where: { id } });
     if (!serviceSpot) {
       throw new NotFoundException(`Service spot #${id} not found`);
     }
@@ -98,7 +104,7 @@ export class ServiceSpotsService {
       .file(`service-spots/${serviceSpotId}/images/${imageName}`)
       .getSignedUrl({
         action: 'read',
-        expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // 1 week
+        expires: Date.now() + 1000 * 60 * 60 * 24 * 7, // 1 week,
       })
       .then((result) => result[0]);
   }
@@ -109,17 +115,22 @@ export class ServiceSpotsService {
     if (!inviteCode) {
       inviteCode = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 5)();
     }
-    const ttl = 900; // 1 minute (in seconds)
     const inviteSession = await this.redis.get(`invitation:${inviteCode}`);
     if (!inviteSession) {
+      const ttl = 900; // 15 minute (in seconds)
       await Promise.all([
         this.redis.set(`invitation:${inviteCode}`, serviceSpotId, 'EX', ttl),
         this.redis.set(serviceSpotSessionKey, inviteCode, 'EX', ttl),
       ]);
+      return {
+        code: inviteCode,
+        ttl,
+      };
     }
+    const ttl = await this.redis.ttl(`invitation:${inviteCode}`);
     return {
       code: inviteCode,
-      expiresAt: Date.now() + ttl * 1000, // 5 minutes
+      ttl, // 5 minutes
     };
   }
 
@@ -132,25 +143,27 @@ export class ServiceSpotsService {
     return +serviceSpotId;
   }
 
-  async mapToDto(serviceSpot: ServiceSpot): Promise<ServiceSpotDto> {
-    const address = await this.addressesService.findOneAddressBySubDistrictId(
-      serviceSpot.subDistrictId,
-    );
-    const driver = await this.driversService.findOneWithInfo(serviceSpot.serviceSpotOwnerId);
-    const priceRateImageUrl = await this.getImageUrl(serviceSpot.id, 'price_rate_image');
-    return {
-      id: serviceSpot.id,
-      name: serviceSpot.name,
-      coords: {
-        lat: serviceSpot.coords.coordinates[1],
-        lng: serviceSpot.coords.coordinates[0],
-      },
+  async mapToDto(serviceSpot: ServiceSpot) {
+    const serviceSpotDto = new ServiceSpotDto();
+    serviceSpotDto.id = serviceSpot.id;
+    serviceSpotDto.name = serviceSpot.name;
+    serviceSpotDto.setAddress({
       addressLine1: serviceSpot.addressLine1,
       addressLine2: serviceSpot.addressLine2,
-      address,
-      serviceSpotOwner: driver,
-      approved: serviceSpot.approved,
-      priceRateImageUrl,
+      subDistrict: serviceSpot.subDistrict,
+    });
+    serviceSpotDto.coords = {
+      lat: serviceSpot.coords.coordinates[1],
+      lng: serviceSpot.coords.coordinates[0],
     };
+    serviceSpotDto.approved = serviceSpot.approved;
+    serviceSpotDto.serviceSpotOwner = await this.driversService.findOneWithInfo(
+      serviceSpot.serviceSpotOwnerId,
+    );
+    serviceSpotDto.priceRateImageUrl = await this.getImageUrl(serviceSpot.id, 'price_rate_image');
+
+    return instanceToPlain(serviceSpotDto, {
+      excludePrefixes: ['_'],
+    }) as ServiceSpotDto;
   }
 }

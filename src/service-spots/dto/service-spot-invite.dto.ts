@@ -10,9 +10,9 @@ export class ServiceSpotInviteDto {
   code: string;
 
   @ApiProperty({
-    description: 'Time in milliseconds when the invite code expires',
-    example: 1640995200000,
+    description: 'Time in seconds when the invite code expires',
+    example: 900,
   })
   @IsPositive()
-  expiresAt: number;
+  ttl: number;
 }
