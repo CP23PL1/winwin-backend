@@ -98,6 +98,26 @@ export class ServiceSpotsService {
       .then((count) => count > 0);
   }
 
+  async removeDriverFromServiceSpot(driverId: string, serviceSpotId: number) {
+    return this.serviceSpotRepo.manager.transaction(async (manager) => {
+      const driver = await this.driversService.findOneById(driverId, {
+        select: {
+          id: true,
+          serviceSpot: { id: true },
+        },
+        relations: { serviceSpot: true },
+      });
+      if (!driver) {
+        throw new Error('Driver not found');
+      }
+      if (driver.serviceSpot.id !== serviceSpotId) {
+        throw new Error('Driver not in service spot');
+      }
+      driver.serviceSpot = null;
+      await manager.save(driver);
+    });
+  }
+
   async getImageUrl(serviceSpotId: number, imageName: string) {
     const bucket = this.firebase.storage.bucket();
     return bucket

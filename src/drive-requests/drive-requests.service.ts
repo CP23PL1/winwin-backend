@@ -113,10 +113,8 @@ export class DriveRequestsService {
         .addSelect('CAST(AVG(feedback.rating)::NUMERIC(3,2) AS FLOAT)', 'rating')
         .addSelect('CAST(COUNT(feedback.id) AS INT)', 'totalFeedbacks')
         .groupBy('driveRequest.driverId, feedback.category')
-        .where("feedback.createdAt >= NOW() - INTERVAL '1' DAY")
         .getRawMany<Pick<DriverRating, 'driverId' | 'category' | 'rating' | 'totalFeedbacks'>>();
 
-      // const driverRating = this.dataSource.getRepository(DriverRating);
       await queryBuilder
         .insert()
         .into(DriverRating)

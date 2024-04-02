@@ -15,4 +15,12 @@ export class ServiceSpotException {
       message: `Sub district with id ${subDistrictId} not found`,
     };
   }
+  static NotOwned: ExceptionPayload = {
+    code: 'service_spot_not_owned',
+    message: 'Service spot not owned by user',
+  };
+  static SelfRemove: ExceptionPayload = {
+    code: 'service_spot_self_remove',
+    message: 'You can not remove service spot owned by yourself',
+  };
 }

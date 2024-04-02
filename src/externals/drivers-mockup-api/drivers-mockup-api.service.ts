@@ -21,13 +21,18 @@ export class DriversMockupApiService {
     return data;
   }
 
-  async getDrivers(query?: GetDriversQuery): Promise<DriverInfoDto[]> {
-    const observable = this.http.get<DriverInfoDto[]>('/drivers', { params: query }).pipe(
-      catchError((error: AxiosError) => {
-        throw new Error(error.message);
-      }),
-    );
-    const { data } = await firstValueFrom(observable);
-    return data;
+  async getDrivers(query?: GetDriversQuery) {
+    const observable = this.http
+      .get<{
+        data: DriverInfoDto[];
+        meta: { currentPage: number; itemsPerPage: number; totalItems: number; totalPages: number };
+      }>('/drivers', { params: query })
+      .pipe(
+        catchError((error: AxiosError) => {
+          throw new Error(error.message);
+        }),
+      );
+    const { data: drivers } = await firstValueFrom(observable);
+    return drivers;
   }
 }

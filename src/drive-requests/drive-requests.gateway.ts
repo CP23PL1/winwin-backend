@@ -20,7 +20,6 @@ import { UserIdentificationType } from 'src/users/dtos/find-one-user-query.dto';
 import { ConfigService } from '@nestjs/config';
 import { ServiceSpotsService } from 'src/service-spots/service-spots.service';
 import * as moment from 'moment';
-import { DriverDto } from 'src/drivers/dtos/driver.dto';
 import { CreateDriveRequestChatDto } from './dto/create-drive-request-chat.dto';
 import { Coordinate } from 'src/shared/dtos/coordinate.dto';
 import { UpdateDriveRequestStatusDto } from './dto/update-drive-request-status.dto';
@@ -110,7 +109,6 @@ export class DriveRequestsGateway
       this.googleApiService.getReverseGeocode(origin),
       this.googleApiService.getReverseGeocode(destination),
     ]);
-    console.log(origin, destination);
     const customId = customAlphabet('1234567890', 6);
     const id = `DR-${moment().format('YYMMDD')}-${customId()}`;
     const createdAt = moment().toISOString();
@@ -166,7 +164,6 @@ export class DriveRequestsGateway
       status: DriveRequestSessionStatus.ON_GOING,
       driverId: driverSocket.data.user.user_id,
     };
-    console.log(data);
     await this.redisDriveRequestStore.saveDriveRequest(data.sid, payload);
     this.redis.set(`drivers:${driverSocket.data.user.user_id}:drive-request-session`, data.sid);
     this.redis.set(`users:${data.userId}:drive-request-session`, data.sid);
@@ -184,8 +181,8 @@ export class DriveRequestsGateway
     @ConnectedSocket() driverSocket: Socket,
     @MessageBody() data: DriveRequestSession,
   ) {
-    // Cooldown driver for 5 minutes before they can get another job offer
-    driverSocket.data.cooldown = moment().add(5, 'minutes').toISOString();
+    // Cooldown driver for 1 minutes before they can get another job offer
+    driverSocket.data.cooldown = moment().add(1, 'minutes').toISOString();
 
     try {
       const newDriverSocket = await this.findDriverSocketToOfferJob(
@@ -369,7 +366,8 @@ export class DriveRequestsGateway
         });
       }
     }
-
+    socket.data.online = false;
+    socket.emit('sync-driver-status', socket.data.online);
     this.logger.debug(
       `Driver connected: ${socket.data.user.user_id} and joined ${serviceSpotRoom}`,
     );

@@ -95,7 +95,9 @@ export class DriversController {
           serviceSpotOwnerId: true,
         },
       },
-      relations: ['serviceSpot'],
+      relations: {
+        serviceSpot: true,
+      },
     });
 
     if (!driver) {
@@ -106,6 +108,15 @@ export class DriversController {
     }
 
     return plainToInstance(DriverDto, { ...driver, info: driverInfo });
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @ApiOkResponse({
+    description: 'Driver ratings successfully retrieved.',
+  })
+  @Get('me/ratings')
+  getMyRatings(@Req() req: FastifyRequest) {
+    return this.driversService.findDriverRatingsByDriverId(req.user.user_id);
   }
 
   @HttpCode(HttpStatus.OK)

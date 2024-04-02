@@ -8,6 +8,7 @@ import { PaginateConfig, PaginateQuery, paginate } from 'nestjs-paginate';
 import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
 import { plainToInstance } from 'class-transformer';
 import { DriverDto } from './dtos/driver.dto';
+import { DriverRating } from './entities/driver-rating.entity';
 
 @Injectable()
 export class DriversService {
@@ -18,6 +19,8 @@ export class DriversService {
     private readonly driverRepository: Repository<Driver>,
     @InjectRepository(DriveRequest)
     private readonly driveRequestRepository: Repository<DriveRequest>,
+    @InjectRepository(DriverRating)
+    private readonly driverRatingRepository: Repository<DriverRating>,
     private readonly driversMockupApi: DriversMockupApiService,
   ) {}
 
@@ -48,20 +51,43 @@ export class DriversService {
   async findAllDriversInServiceSpot(serviceSpotId: number) {
     const drivers = await this.driverRepository
       .createQueryBuilder('driver')
-      .select('driver.phoneNumber')
+      .select('driver.id')
+      .addSelect('driver.phoneNumber')
       .leftJoin('driver.serviceSpot', 'serviceSpot')
       .where('serviceSpot.id = :serviceSpotId AND driver.id <> serviceSpot.serviceSpotOwnerId', {
         serviceSpotId,
       })
       .getMany();
+
     if (drivers.length <= 0) {
       return [];
     }
+
     const driverInfos = await this.driversMockupApi.getDrivers({
       $in_field: 'phoneNumber',
       $in: drivers.map((driver) => driver.phoneNumber).join(','),
     });
-    return driverInfos;
+
+    const mergedDriver = drivers.map((driver) => {
+      const driverInfo = driverInfos.data.find((info) => info.phoneNumber === driver.phoneNumber);
+      return plainToInstance(DriverDto, { ...driver, info: driverInfo });
+    });
+
+    return {
+      data: mergedDriver,
+      meta: driverInfos.meta,
+    };
+  }
+
+  async findDriverRatingsByDriverId(driverId: string) {
+    return this.driverRatingRepository
+      .createQueryBuilder('driverRating')
+      .select('CAST(driverRating.rating AS FLOAT)')
+      .addSelect('driverRating.category', 'category')
+      .addSelect('driverRating.totalFeedbacks', 'totalFeedbacks')
+      .where('driverRating.driverId = :driverId', { driverId })
+      .where({ driverId })
+      .getRawMany();
   }
 
   async findOneById(id: Driver['id'], options: FindOneOptions<Driver> = {}) {
@@ -97,6 +123,12 @@ export class DriversService {
 
   create(data: CreateDriverDto) {
     return this.driverRepository.save(data);
+  }
+
+  async removeFromServiceSpot(driverId: string) {
+    return this.driverRepository.update(driverId, {
+      serviceSpot: null,
+    });
   }
 
   async update(id: string, data: DeepPartial<Driver>) {

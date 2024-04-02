@@ -15,11 +15,13 @@ import {
   ForbiddenException,
   HttpStatus,
   HttpCode,
+  Delete,
 } from '@nestjs/common';
 import { ServiceSpotsService } from './service-spots.service';
 import { CreateServiceSpot, CreateServiceSpotFiles } from './dto/create-service-spot.dto';
 import { UpdateServiceSpot } from './dto/update-service-spot.dto';
 import {
+  ApiBadRequestResponse,
   ApiBearerAuth,
   ApiConsumes,
   ApiCreatedResponse,
@@ -167,6 +169,36 @@ export class ServiceSpotsController {
   // remove(@Param('id', ParseIntPipe) id: number) {
   //   return this.serviceSpotsService.remove(id);
   // }
+
+  @ApiOkResponse({
+    description: 'Remove driver from service spot.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Driver not found or not in service spot.',
+  })
+  @Auth0Roles(Role.Driver)
+  @Delete(':id/drivers/:driverId')
+  async removeDriverFromServiceSpot(
+    @Req() req: FastifyRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('driverId') driverId: string,
+  ) {
+    const isOwned = await this.serviceSpotsService.isOwnedServiceSpot(req.user.user_id, id);
+
+    if (!isOwned) {
+      throw new ForbiddenException(ServiceSpotException.NotOwned);
+    }
+
+    if (driverId === req.user.user_id) {
+      throw new BadRequestException(ServiceSpotException.SelfRemove);
+    }
+
+    try {
+      await this.serviceSpotsService.removeDriverFromServiceSpot(driverId, id);
+    } catch (error: any) {
+      throw new BadRequestException(error.message);
+    }
+  }
 
   @Auth0Roles(Role.Driver)
   @HttpCode(HttpStatus.OK)

@@ -1,18 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { VehicleDto } from './vehicle.dto';
-import { Exclude } from 'class-transformer';
 
 export class DriverInfoDto {
   @ApiProperty({
     description: 'The identifier of the driver from the external API',
   })
   id: number;
-
-  @ApiProperty({
-    description: 'The driver national ID',
-  })
-  @Exclude()
-  nationalId: string;
 
   @ApiProperty({
     description: 'The driver first name',
