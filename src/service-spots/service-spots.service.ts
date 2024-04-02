@@ -36,7 +36,6 @@ export class ServiceSpotsService {
       const driver = await this.driversService.findOneById(data.serviceSpotOwnerId);
 
       if (!driver) {
-        console.log(data.serviceSpotOwnerId);
         throw new Error('Driver not found');
       }
 

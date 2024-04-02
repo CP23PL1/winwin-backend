@@ -44,6 +44,7 @@ import { Role } from 'src/authorization/dto/user-info.dto';
 import { DriversService } from 'src/drivers/drivers.service';
 import { ServiceSpotException } from './constants/exceptions';
 import { plainToInstance } from 'class-transformer';
+import { DriverException } from 'src/drivers/constants/exceptions';
 
 @ApiTags('Service Spots')
 @ApiBearerAuth()
@@ -73,10 +74,19 @@ export class ServiceSpotsController {
       throw new BadRequestException('You can only create service spot for yourself');
     }
 
+    const driverHasServiceSpot = await this.driversService.IsDriverHasServiceSpot(
+      data.serviceSpotOwnerId,
+    );
+
+    if (driverHasServiceSpot) {
+      throw new BadRequestException(DriverException.DriverAlreadyInServiceSpot);
+    }
+
     try {
       const newServiceSpot = await this.serviceSpotsService.create(data, files);
       return this.serviceSpotsService.mapToDto(newServiceSpot);
     } catch (error: any) {
+      console.error(error);
       switch (error.code) {
         case '23505':
           throw new ConflictException(ServiceSpotException.AlreadyExist(data.name));
