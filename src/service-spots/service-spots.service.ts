@@ -36,6 +36,7 @@ export class ServiceSpotsService {
       const driver = await this.driversService.findOneById(data.serviceSpotOwnerId);
 
       if (!driver) {
+        console.log(data.serviceSpotOwnerId);
         throw new Error('Driver not found');
       }
 
@@ -60,6 +61,7 @@ export class ServiceSpotsService {
       });
     } catch (error) {
       await queryRunner.rollbackTransaction();
+      throw error;
     } finally {
       await queryRunner.release();
     }
