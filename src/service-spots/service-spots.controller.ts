@@ -204,7 +204,14 @@ export class ServiceSpotsController {
     try {
       await this.serviceSpotsService.removeDriverFromServiceSpot(driverId, id);
     } catch (error: any) {
-      throw new BadRequestException(error.message);
+      switch (error.message) {
+        case 'driver_not_found':
+          throw new NotFoundException(DriverException.NotFound);
+        case 'not_in_service_spot':
+          throw new BadRequestException(ServiceSpotException.DriverNotInServiceSpot);
+        default:
+          throw error;
+      }
     }
   }
 

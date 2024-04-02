@@ -12,6 +12,7 @@ import { Redis } from 'ioredis';
 import { ServiceSpotInviteDto } from './dto/service-spot-invite.dto';
 import { instanceToPlain } from 'class-transformer';
 import { MemoryStorageFile } from '@blazity/nest-file-fastify';
+import { DriverException } from 'src/drivers/constants/exceptions';
 
 @Injectable()
 export class ServiceSpotsService {
@@ -115,7 +116,7 @@ export class ServiceSpotsService {
       .then((count) => count > 0);
   }
 
-  async removeDriverFromServiceSpot(driverId: string, serviceSpotId: number) {
+  removeDriverFromServiceSpot(driverId: string, serviceSpotId: number) {
     return this.serviceSpotRepo.manager.transaction(async (manager) => {
       const driver = await this.driversService.findOneById(driverId, {
         select: {
@@ -125,10 +126,10 @@ export class ServiceSpotsService {
         relations: { serviceSpot: true },
       });
       if (!driver) {
-        throw new Error('Driver not found');
+        throw new Error('driver_not_found');
       }
       if (driver.serviceSpot.id !== serviceSpotId) {
-        throw new Error('Driver not in service spot');
+        throw new Error('not_in_service_spot');
       }
       driver.serviceSpot = null;
       await manager.save(driver);

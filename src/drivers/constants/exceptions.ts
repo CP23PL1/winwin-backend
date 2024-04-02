@@ -21,4 +21,8 @@ export class DriverException {
     code: 'cannot_join_owned_service_spot',
     message: 'Cannot join service spot owned by yourself',
   };
+  static readonly NotFound: ExceptionPayload = {
+    code: 'driver_not_found',
+    message: 'Driver not found',
+  };
 }

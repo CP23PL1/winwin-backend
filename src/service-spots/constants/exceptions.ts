@@ -29,4 +29,8 @@ export class ServiceSpotException {
     code: 'service_spot_self_remove',
     message: 'You can not remove service spot owned by yourself',
   };
+  static readonly DriverNotInServiceSpot: ExceptionPayload = {
+    code: 'driver_not_in_service_spot',
+    message: 'Driver not in service spot',
+  };
 }
