@@ -36,12 +36,13 @@ export class DriverRating {
 
   @Column({
     type: 'enum',
+    enumName: 'feedback_category_enum',
     enum: feedbackCategoties,
   })
   category: FeedbackCategory;
 
   @Column({
-    default: 0,
+    default: 1,
   })
   totalFeedbacks: number;
 

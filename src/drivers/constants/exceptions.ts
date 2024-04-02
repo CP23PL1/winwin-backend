@@ -13,4 +13,12 @@ export class DriverException {
     code: 'drive_request_not_found',
     message: 'Drive request not found',
   };
+  static readonly DriverAlreadyInServiceSpot: ExceptionPayload = {
+    code: 'driver_already_in_service_spot',
+    message: 'Driver already in service spot',
+  };
+  static readonly CannotJoinOwnedServiceSpot: ExceptionPayload = {
+    code: 'cannot_join_owned_service_spot',
+    message: 'Cannot join service spot owned by yourself',
+  };
 }

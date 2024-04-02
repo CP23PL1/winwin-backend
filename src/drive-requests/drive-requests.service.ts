@@ -110,11 +110,14 @@ export class DriveRequestsService {
         .leftJoinAndSelect('feedback.driveRequest', 'driveRequest')
         .select('driveRequest.driverId', 'driverId')
         .addSelect('feedback.category', 'category')
-        .addSelect('CAST(AVG(feedback.rating)::NUMERIC(3,2) AS FLOAT)', 'rating')
         .addSelect('CAST(COUNT(feedback.id) AS INT)', 'totalFeedbacks')
+        .addSelect(
+          'CAST((CAST(SUM(feedback.rating) AS INT) / CAST(COUNT(feedback.id) AS INT))::NUMERIC AS FLOAT)',
+          'rating',
+        )
         .groupBy('driveRequest.driverId, feedback.category')
         .getRawMany<Pick<DriverRating, 'driverId' | 'category' | 'rating' | 'totalFeedbacks'>>();
-
+      console.log(computedDriverRating);
       await queryBuilder
         .insert()
         .into(DriverRating)

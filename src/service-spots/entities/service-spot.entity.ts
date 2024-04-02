@@ -4,8 +4,10 @@ import {
   CreateDateColumn,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   Point,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -43,14 +45,14 @@ export class ServiceSpot {
   })
   approved: boolean;
 
-  @ManyToOne(() => Driver, (driver) => driver.serviceSpot, { onDelete: 'CASCADE' })
-  @Index()
+  @OneToOne(() => Driver)
+  @JoinColumn()
   serviceSpotOwner: Driver;
 
   @Column()
   serviceSpotOwnerId: string;
 
-  @OneToMany(() => Driver, (serviceSpotHasDriver) => serviceSpotHasDriver.serviceSpot)
+  @OneToMany(() => Driver, (driver) => driver.serviceSpot)
   drivers: Driver[];
 
   @OneToMany(() => DriveRequest, (driveRequest) => driveRequest.driver)

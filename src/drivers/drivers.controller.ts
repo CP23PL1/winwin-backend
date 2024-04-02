@@ -101,10 +101,11 @@ export class DriversController {
     });
 
     if (!driver) {
-      driver = await this.driversService.create({
+      const result = await this.driversService.create({
         id: req.user.user_id,
         phoneNumber: req.user.phone_number,
       });
+      driver = await this.driversService.findOneById(result.identifiers[0].id);
     }
 
     return plainToInstance(DriverDto, { ...driver, info: driverInfo });
@@ -128,6 +129,12 @@ export class DriversController {
   })
   @Patch('service-spot/join')
   async joinServiceSpot(@Req() req: FastifyRequest, @Body() data: JoinServiceSpot) {
+    const driverHasServiceSpot = await this.driversService.IsDriverHasServiceSpot(req.user.user_id);
+
+    if (driverHasServiceSpot) {
+      throw new BadRequestException(DriverException.DriverAlreadyInServiceSpot);
+    }
+
     const serviceSpotId = await this.serviceSpotsService.findServiceSpotByInviteCode(data.code);
 
     if (!serviceSpotId) {
@@ -163,7 +170,10 @@ export class DriversController {
   })
   @Get('me/drive-requests/:id')
   async getDriveRequest(@Req() req: FastifyRequest, @Param('id') id: string) {
-    const driveRequest = this.driversService.findOneDriveRequestByDriverId(req.user.user_id, id);
+    const driveRequest = await this.driversService.findOneDriveRequestByDriverId(
+      req.user.user_id,
+      id,
+    );
     if (!driveRequest) {
       throw new NotFoundException(DriverException.DriveRequestNotFound);
     }

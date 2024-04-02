@@ -14,7 +14,6 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateDriveRequestPreviewDto } from './dto/create-drive-request-preview.dto';
 import { DriveRequestPreviewDto } from './dto/drive-request-preview.dto';
 import { CreateDriveRequestFeedbackDto } from './dto/create-drive-request-feedback.dto';
-import { DriversService } from 'src/drivers/drivers.service';
 
 @ApiTags('Drive Requests')
 @ApiBearerAuth()
@@ -25,7 +24,6 @@ export class DriveRequestsController {
     private readonly configService: ConfigService,
     private readonly googleApiService: GoogleApiService,
     private readonly driveRequestsService: DriveRequestsService,
-    private readonly driversService: DriversService,
   ) {
     this.DRIVE_SERVICE_CHARGE = parseInt(this.configService.get('DRIVE_SERVICE_CHARGE'), 10);
   }
@@ -63,5 +61,10 @@ export class DriveRequestsController {
     }
 
     return this.driveRequestsService.createFeedback(id, data);
+  }
+
+  @Post('__test__/compute-feedback')
+  async computeFeedback() {
+    return this.driveRequestsService.computeFeedback();
   }
 }

@@ -1,11 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateServiceSpot, CreateServiceSpotFiles } from './dto/create-service-spot.dto';
-import { UpdateServiceSpot } from './dto/update-service-spot.dto';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { ServiceSpot } from './entities/service-spot.entity';
-import { FindOneOptions, FindOptions, Repository } from 'typeorm';
+import { DataSource, FindOneOptions, Repository } from 'typeorm';
 import { ServiceSpotDto } from './dto/service-spot.dto';
-import { AddressesService } from 'src/addresses/addresses.service';
 import { FirebaseAdmin, InjectFirebaseAdmin } from 'nestjs-firebase';
 import { DriversService } from 'src/drivers/drivers.service';
 import { customAlphabet } from 'nanoid';
@@ -13,6 +11,7 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import { Redis } from 'ioredis';
 import { ServiceSpotInviteDto } from './dto/service-spot-invite.dto';
 import { instanceToPlain } from 'class-transformer';
+import { MemoryStorageFile } from '@blazity/nest-file-fastify';
 
 @Injectable()
 export class ServiceSpotsService {
@@ -24,25 +23,46 @@ export class ServiceSpotsService {
     private readonly firebase: FirebaseAdmin,
     @InjectRedis()
     private readonly redis: Redis,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
-  create(data: CreateServiceSpot, files: CreateServiceSpotFiles) {
-    const bucket = this.firebase.storage.bucket();
-    return this.serviceSpotRepo.manager.transaction(async (manager) => {
+  async create(data: CreateServiceSpot, files: CreateServiceSpotFiles) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
       const driver = await this.driversService.findOneById(data.serviceSpotOwnerId);
+
       if (!driver) {
         throw new Error('Driver not found');
       }
-      const newServiceSpot = this.serviceSpotRepo.create(data);
-      await manager.save(newServiceSpot);
+
+      let newServiceSpot = this.serviceSpotRepo.create(data);
+      newServiceSpot = await queryRunner.manager.save(newServiceSpot, { reload: true });
+
       driver.serviceSpot = newServiceSpot;
-      await manager.save(driver);
-      const path = `service-spots/${newServiceSpot.id}/images`;
-      await bucket
-        .file(`${path}/price_rate_image`)
-        .save(files.priceRateImage[0].buffer, { contentType: files.priceRateImage[0].mimetype });
-      return newServiceSpot;
-    });
+
+      await queryRunner.manager.save(driver);
+      await this.saveImage(newServiceSpot.id, files.priceRateImage[0]);
+      await queryRunner.commitTransaction();
+
+      return this.serviceSpotRepo.findOne({
+        where: { id: newServiceSpot.id },
+        relations: {
+          subDistrict: {
+            district: {
+              province: true,
+            },
+          },
+        },
+      });
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   findAll() {
@@ -75,13 +95,9 @@ export class ServiceSpotsService {
   async findOne(id: number, options: FindOneOptions<ServiceSpot> = {}) {
     const serviceSpot = await this.serviceSpotRepo.findOne({ ...options, where: { id } });
     if (!serviceSpot) {
-      throw new NotFoundException(`Service spot #${id} not found`);
+      return null;
     }
     return serviceSpot;
-  }
-
-  update(id: number, data: UpdateServiceSpot) {
-    return this.serviceSpotRepo.save({ id, ...data });
   }
 
   remove(id: number) {
@@ -116,6 +132,14 @@ export class ServiceSpotsService {
       driver.serviceSpot = null;
       await manager.save(driver);
     });
+  }
+
+  async saveImage(serviceSpotId: number, file: MemoryStorageFile) {
+    const bucket = this.firebase.storage.bucket();
+    const path = `service-spots/${serviceSpotId}/images`;
+    await bucket
+      .file(`${path}/${file.fieldname}`)
+      .save(file.buffer, { contentType: file.mimetype });
   }
 
   async getImageUrl(serviceSpotId: number, imageName: string) {
@@ -180,7 +204,7 @@ export class ServiceSpotsService {
     serviceSpotDto.serviceSpotOwner = await this.driversService.findOneWithInfo(
       serviceSpot.serviceSpotOwnerId,
     );
-    serviceSpotDto.priceRateImageUrl = await this.getImageUrl(serviceSpot.id, 'price_rate_image');
+    serviceSpotDto.priceRateImageUrl = await this.getImageUrl(serviceSpot.id, 'priceRateImage');
 
     return instanceToPlain(serviceSpotDto, {
       excludePrefixes: ['_'],

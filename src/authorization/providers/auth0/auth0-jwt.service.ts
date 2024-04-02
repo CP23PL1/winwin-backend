@@ -47,7 +47,6 @@ export class Auth0JwtService {
       this.logger.error(
         'An error occurred verifying the bearer token with the associated public key',
       );
-      this.logger.error(error.stack);
       throw new ForbiddenException(error.message);
     }
 

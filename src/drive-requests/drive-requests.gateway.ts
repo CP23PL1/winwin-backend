@@ -8,11 +8,12 @@ import {
   OnGatewayInit,
   ConnectedSocket,
   WsException,
+  BaseWsExceptionFilter,
 } from '@nestjs/websockets';
 import { Socket, RemoteSocket, Namespace } from 'socket.io';
 import { RequestDriveDto } from './dto/request-drive.dto';
 import { DriversService } from 'src/drivers/drivers.service';
-import { Logger } from '@nestjs/common';
+import { Logger, UseFilters } from '@nestjs/common';
 import { Auth0JwtService } from 'src/authorization/providers/auth0/auth0-jwt.service';
 import { auth0JwtSocketIoMiddleware } from 'src/authorization/providers/auth0/auth0-jwt.middleware';
 import { UsersService } from 'src/users/users.service';
@@ -36,6 +37,7 @@ import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import { Driver } from 'src/drivers/entities/driver.entity';
 
+@UseFilters(new BaseWsExceptionFilter())
 @WebSocketGateway({
   namespace: 'drive-request',
   path: process.env.SOCKET_IO_PATH,
@@ -339,10 +341,10 @@ export class DriveRequestsGateway
         },
       });
     } catch (error: any) {
-      throw this.rejectUnauthorizedClient(socket, 'An error occurred getting driver info');
+      this.rejectUnauthorizedClient(socket, 'An error occurred getting driver info');
     }
     if (!driver.serviceSpot) {
-      throw this.rejectUnauthorizedClient(socket, 'Driver does not have a service spot');
+      this.rejectUnauthorizedClient(socket, 'Driver does not have a service spot');
     }
     const serviceSpotRoom = this.getServiceSpotRoom(driver.serviceSpot.id);
     socket.join(serviceSpotRoom);

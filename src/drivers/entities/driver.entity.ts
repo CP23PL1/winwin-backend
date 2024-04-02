@@ -20,7 +20,7 @@ export class Driver {
   @Column({ unique: true })
   phoneNumber: string;
 
-  @ManyToOne(() => ServiceSpot, (serviceSpot) => serviceSpot.serviceSpotOwner, {
+  @ManyToOne(() => ServiceSpot, (serviceSpot) => serviceSpot.drivers, {
     onDelete: 'SET NULL',
     nullable: true,
   })

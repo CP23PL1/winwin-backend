@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Post,
-  Patch,
   Param,
   Body,
   Query,
@@ -16,15 +15,19 @@ import {
   HttpStatus,
   HttpCode,
   Delete,
+  NotFoundException,
+  Put,
 } from '@nestjs/common';
 import { ServiceSpotsService } from './service-spots.service';
 import { CreateServiceSpot, CreateServiceSpotFiles } from './dto/create-service-spot.dto';
-import { UpdateServiceSpot } from './dto/update-service-spot.dto';
+import { UpdateServiceSpot, UpdateServiceSpotFiles } from './dto/update-service-spot.dto';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiTags,
@@ -72,7 +75,7 @@ export class ServiceSpotsController {
 
     try {
       const newServiceSpot = await this.serviceSpotsService.create(data, files);
-      return plainToInstance(ServiceSpotDto, newServiceSpot, { excludePrefixes: ['_'] });
+      return this.serviceSpotsService.mapToDto(newServiceSpot);
     } catch (error: any) {
       switch (error.code) {
         case '23505':
@@ -122,6 +125,7 @@ export class ServiceSpotsController {
     return this.serviceSpotsService.mapToDto(serviceSpot);
   }
 
+  @Auth0Roles(Role.Driver)
   @HttpCode(HttpStatus.OK)
   @Get(':id/drivers')
   findDrivers(@Param('id', ParseIntPipe) id: number) {
@@ -130,20 +134,29 @@ export class ServiceSpotsController {
 
   @Auth0Roles(Role.Driver)
   @HttpCode(HttpStatus.OK)
-  @ApiOkResponse({
-    type: ServiceSpotDto,
-    description: 'Update service spot detail by service spot id.',
+  @ApiBody({
+    type: () => UpdateServiceSpot,
+  })
+  @ApiNoContentResponse({
+    description: 'Service spot updated successfully.',
   })
   @ApiNotFoundResponse({
     description: 'Service spot not found.',
   })
-  @Patch(':id')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileFieldsInterceptor([{ name: 'priceRateImage', maxCount: 1 }]))
+  @Put(':id')
   async update(
     @Req() req: FastifyRequest,
     @Param('id', ParseIntPipe) id: number,
-    @Body() data: UpdateServiceSpot,
+    @UploadedFiles()
+    files: UpdateServiceSpotFiles,
   ) {
     const serviceSpot = await this.serviceSpotsService.findOne(id);
+
+    if (!serviceSpot) {
+      throw new NotFoundException(ServiceSpotException.NotFound(id));
+    }
 
     if (serviceSpot.serviceSpotOwnerId !== req.user.user_id) {
       throw new ForbiddenException({
@@ -152,23 +165,8 @@ export class ServiceSpotsController {
       });
     }
 
-    const updatedServiceSpot = await this.serviceSpotsService.update(id, {
-      ...serviceSpot,
-      ...data,
-    });
-    return this.serviceSpotsService.mapToDto(updatedServiceSpot);
+    return this.serviceSpotsService.saveImage(id, files.priceRateImage[0]);
   }
-
-  // @ApiOkResponse({
-  //   description: 'Delete service spot by service spot id.',
-  // })
-  // @ApiNotFoundResponse({
-  //   description: 'Service spot not found.',
-  // })
-  // @Delete(':id')
-  // remove(@Param('id', ParseIntPipe) id: number) {
-  //   return this.serviceSpotsService.remove(id);
-  // }
 
   @ApiOkResponse({
     description: 'Remove driver from service spot.',

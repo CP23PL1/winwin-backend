@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
 import { Driver } from './entities/driver.entity';
-import { DeepPartial, FindOneOptions, FindOptionsWhere, Repository, Not } from 'typeorm';
+import { DeepPartial, FindOneOptions, FindOptionsWhere, Repository, Not, IsNull } from 'typeorm';
 import { CreateDriverDto } from './dtos/create-driver.dto';
 import { PaginateConfig, PaginateQuery, paginate } from 'nestjs-paginate';
 import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
@@ -121,8 +121,19 @@ export class DriversService {
     return plainToInstance(DriverDto, { ...driver, info: driverInfo });
   }
 
+  async IsDriverHasServiceSpot(driverId: string) {
+    console.log(driverId);
+    return this.driverRepository
+      .createQueryBuilder('driver')
+      .where({
+        id: driverId,
+        serviceSpot: Not(IsNull()),
+      })
+      .getExists();
+  }
+
   create(data: CreateDriverDto) {
-    return this.driverRepository.save(data);
+    return this.driverRepository.insert(data);
   }
 
   async removeFromServiceSpot(driverId: string) {
