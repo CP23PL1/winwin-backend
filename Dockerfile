@@ -1,17 +1,18 @@
 # BUILD
-FROM node:lts-alpine as build
+FROM node:lts-alpine AS build
 WORKDIR /app
-COPY . .
+COPY package.json yarn.lock ./
 RUN yarn install --frozen-lockfile
+COPY . .
 RUN yarn build
 
 # PRODUCTION
-FROM node:lts-alpine as production
-ENV NODE_ENV=production
-COPY --chown=node:node --from=build /app/dist /app/dist
-COPY --chown=node:node --from=build /app/node_modules /app/node_modules
-
+FROM node:lts-alpine AS production
 WORKDIR /app
-ENTRYPOINT [ "node", "dist/main.js" ]
+ENV NODE_ENV=production
+COPY --from=build /app/dist ./dist
+COPY --from=build /app/node_modules ./node_modules
 
 USER node
+
+ENTRYPOINT ["node", "dist/main.js"]

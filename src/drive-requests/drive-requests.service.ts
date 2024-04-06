@@ -95,7 +95,7 @@ export class DriveRequestsService {
     return price;
   }
 
-  @Cron(CronExpression.EVERY_12_HOURS)
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async computeFeedback() {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -112,10 +112,11 @@ export class DriveRequestsService {
         .addSelect('feedback.category', 'category')
         .addSelect('CAST(COUNT(feedback.id) AS INT)', 'totalFeedbacks')
         .addSelect(
-          'CAST((CAST(SUM(feedback.rating) AS INT) / CAST(COUNT(feedback.id) AS INT))::NUMERIC AS FLOAT)',
+          'CAST((SUM(feedback.rating) / COUNT(feedback.id))::NUMERIC(3,2) AS FLOAT)',
           'rating',
         )
         .groupBy('driveRequest.driverId, feedback.category')
+        .where("feedback.createdAt >= NOW() - INTERVAL '1' day")
         .getRawMany<Pick<DriverRating, 'driverId' | 'category' | 'rating' | 'totalFeedbacks'>>();
       console.log(computedDriverRating);
       await queryBuilder
@@ -136,6 +137,8 @@ export class DriveRequestsService {
           .update(DriverRating)
           .where('driverId = :driverId AND category = :category', driverRating)
           .set({
+            rating: () =>
+              `(rating + ${driverRating.rating}) / (totalFeedbacks + ${driverRating.totalFeedbacks})`,
             totalFeedbacks: () => `totalFeedbacks + ${driverRating.totalFeedbacks}`,
           })
           .execute();
