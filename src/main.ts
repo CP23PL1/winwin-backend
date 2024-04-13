@@ -4,7 +4,7 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
-import { Environment } from './config/env.validation';
+import { Environment } from './common/config/env.validation';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
 import { validationFailedExceptionFactory } from './shared/exceptions/validation-failed.exception';
 import multipart from '@fastify/multipart';
@@ -51,10 +51,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, documentBuilder);
   SwaggerModule.setup('openapi', app, document);
 
-  logger.debug(`Server running on ${HOST}:${PORT} 🚀`);
-  logger.debug(`Environment: ${ENV}`);
-  logger.debug(`Api Version: ${API_VERSION}`);
-
   const redisIoAdapter = new RedisIoAdapter(app);
   const REDIS_HOST = configService.get<string>('REDIS_HOST');
   const REDIS_PORT = configService.get<number>('REDIS_PORT');
@@ -68,7 +64,9 @@ async function bootstrap() {
     },
   });
   await app.listen(PORT, HOST);
-  logger.log(`Application is running on port ${PORT}`);
+  logger.debug(`Server running on ${HOST}:${PORT} 🚀`);
+  logger.debug(`Environment: ${ENV}`);
+  logger.debug(`Api Version: ${API_VERSION}`);
 }
 
 bootstrap();
