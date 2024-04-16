@@ -51,11 +51,6 @@ export class ServiceSpotDto {
     return addressComponents.join(' ');
   }
 
-  @ApiProperty({
-    type: () => DriverDto,
-  })
-  serviceSpotOwner: DriverDto;
-
   @ApiProperty()
   priceRateImageUrl: string;
 

@@ -47,12 +47,6 @@ export class CreateServiceSpot {
   )
   coords: Point;
 
-  @ApiProperty({
-    description: 'Driver ID (uid) of the service spot owner',
-  })
-  @IsNotEmpty()
-  serviceSpotOwnerId: string;
-
   @ApiProperty({ format: 'binary' })
   priceRateImage: string;
 }

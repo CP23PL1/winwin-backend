@@ -8,9 +8,14 @@ import {
   PrimaryColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { ServiceSpot } from '../../service-spots/entities/service-spot.entity';
 import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
 import { DriverRating } from './driver-rating.entity';
+import { ServiceSpot } from 'src/service-spots/entities/service-spot.entity';
+
+export enum DriverRole {
+  MEMBER = 'member',
+  OWNER = 'owner',
+}
 
 @Entity()
 export class Driver {
@@ -20,12 +25,22 @@ export class Driver {
   @Column({ unique: true })
   phoneNumber: string;
 
+  @Column({
+    type: 'enum',
+    enum: DriverRole,
+    default: DriverRole.MEMBER,
+  })
+  role: DriverRole;
+
   @ManyToOne(() => ServiceSpot, (serviceSpot) => serviceSpot.drivers, {
-    onDelete: 'SET NULL',
     nullable: true,
+    onDelete: 'SET NULL',
   })
   @Index()
   serviceSpot: ServiceSpot;
+
+  @Column()
+  serviceSpotId: ServiceSpot['id'];
 
   @OneToMany(() => DriveRequest, (driveRequest) => driveRequest.driver)
   driveRequests: DriveRequest[];

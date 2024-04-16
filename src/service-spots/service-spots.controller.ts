@@ -70,20 +70,14 @@ export class ServiceSpotsController {
     @UploadedFiles()
     files: CreateServiceSpotFiles,
   ) {
-    if (req.user.user_id !== data.serviceSpotOwnerId) {
-      throw new BadRequestException('You can only create service spot for yourself');
-    }
-
-    const driverHasServiceSpot = await this.driversService.IsDriverHasServiceSpot(
-      data.serviceSpotOwnerId,
-    );
+    const driverHasServiceSpot = await this.driversService.IsDriverHasServiceSpot(req.user.user_id);
 
     if (driverHasServiceSpot) {
       throw new BadRequestException(DriverException.DriverAlreadyInServiceSpot);
     }
 
     try {
-      const newServiceSpot = await this.serviceSpotsService.create(data, files);
+      const newServiceSpot = await this.serviceSpotsService.create(req.user.user_id, data, files);
       return this.serviceSpotsService.mapToDto(newServiceSpot);
     } catch (error: any) {
       console.error(error);
@@ -168,7 +162,9 @@ export class ServiceSpotsController {
       throw new NotFoundException(ServiceSpotException.NotFound(id));
     }
 
-    if (serviceSpot.serviceSpotOwnerId !== req.user.user_id) {
+    const isOwner = await this.driversService.isOwnedServiceSpot(req.user.user_id, id);
+
+    if (!isOwner) {
       throw new ForbiddenException({
         code: 'not_owner',
         message: 'You are not the owner of this service spot',
@@ -191,9 +187,9 @@ export class ServiceSpotsController {
     @Param('id', ParseIntPipe) id: number,
     @Param('driverId') driverId: string,
   ) {
-    const isOwned = await this.serviceSpotsService.isOwnedServiceSpot(req.user.user_id, id);
+    const isOwner = await this.driversService.isOwnedServiceSpot(req.user.user_id, id);
 
-    if (!isOwned) {
+    if (!isOwner) {
       throw new ForbiddenException(ServiceSpotException.NotOwned);
     }
 
@@ -229,9 +225,9 @@ export class ServiceSpotsController {
     @Req() req: FastifyRequest,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<ServiceSpotInviteDto> {
-    const isOwned = await this.serviceSpotsService.isOwnedServiceSpot(req.user.user_id, id);
+    const isOwner = await this.driversService.isOwnedServiceSpot(req.user.user_id, id);
 
-    if (!isOwned) {
+    if (!isOwner) {
       throw new ForbiddenException({
         code: 'not_owner',
         message: 'You are not the owner of this service spot',

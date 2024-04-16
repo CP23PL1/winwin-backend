@@ -18,11 +18,11 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "typeorm": "bun run build && npx typeorm -d dist/db/data-source.js",
-    "migration:generate": "bun typeorm migration:generate",
-    "migration:run": "bun typeorm migration:run",
-    "migration:revert": "bun typeorm migration:revert",
-    "migration:create": "bun typeorm migration:create",
+    "typeorm": "yarn build && npx typeorm -d dist/common/database/data-source.js",
+    "migration:generate": "yarn typeorm migration:generate",
+    "migration:run": "yarn typeorm migration:run",
+    "migration:revert": "yarn typeorm migration:revert",
+    "migration:create": "yarn typeorm migration:create",
     "semantic-release": "semantic-release",
     "commit": "git-cz"
   },
@@ -69,7 +69,8 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "socket.io": "^4.7.5",
-    "typeorm": "^0.3.17"
+    "typeorm": "^0.3.17",
+    "typeorm-auditing": "^0.5.6"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

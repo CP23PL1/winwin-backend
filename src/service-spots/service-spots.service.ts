@@ -28,13 +28,13 @@ export class ServiceSpotsService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async create(data: CreateServiceSpot, files: CreateServiceSpotFiles) {
+  async create(driverId: string, data: CreateServiceSpot, files: CreateServiceSpotFiles) {
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      const driver = await this.driversService.findOneById(data.serviceSpotOwnerId);
+      const driver = await this.driversService.findOneById(driverId);
 
       if (!driver) {
         throw new Error('Driver not found');
@@ -108,12 +108,6 @@ export class ServiceSpotsService {
 
   async exists(id: number) {
     return this.serviceSpotRepo.count({ where: { id } }).then((count) => count > 0);
-  }
-
-  async isOwnedServiceSpot(driverId: string, serviceSpotId: number) {
-    return this.serviceSpotRepo
-      .count({ where: { id: serviceSpotId, serviceSpotOwnerId: driverId } })
-      .then((count) => count > 0);
   }
 
   removeDriverFromServiceSpot(driverId: string, serviceSpotId: number) {
@@ -203,9 +197,6 @@ export class ServiceSpotsService {
       lng: serviceSpot.coords.coordinates[0],
     };
     serviceSpotDto.approved = serviceSpot.approved;
-    serviceSpotDto.serviceSpotOwner = await this.driversService.findOneWithInfo(
-      serviceSpot.serviceSpotOwnerId,
-    );
     serviceSpotDto.priceRateImageUrl = await this.getImageUrl(serviceSpot.id, 'priceRateImage');
 
     return instanceToPlain(serviceSpotDto, {

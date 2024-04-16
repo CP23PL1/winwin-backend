@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DriversMockupApiService } from 'src/externals/drivers-mockup-api/drivers-mockup-api.service';
-import { Driver } from './entities/driver.entity';
+import { Driver, DriverRole } from './entities/driver.entity';
 import { DeepPartial, FindOneOptions, FindOptionsWhere, Repository, Not, IsNull } from 'typeorm';
 import { CreateDriverDto } from './dtos/create-driver.dto';
 import { PaginateConfig, PaginateQuery, paginate } from 'nestjs-paginate';
@@ -54,7 +54,7 @@ export class DriversService {
       .select('driver.id')
       .addSelect('driver.phoneNumber')
       .leftJoin('driver.serviceSpot', 'serviceSpot')
-      .where('serviceSpot.id = :serviceSpotId AND driver.id <> serviceSpot.serviceSpotOwnerId', {
+      .where('serviceSpot.id = :serviceSpotId', {
         serviceSpotId,
       })
       .getMany();
@@ -144,5 +144,17 @@ export class DriversService {
 
   async update(id: string, data: DeepPartial<Driver>) {
     return this.driverRepository.update(id, data);
+  }
+
+  async isOwnedServiceSpot(driverId: string, serviceSpotId: number) {
+    return this.driverRepository
+      .count({
+        where: {
+          id: driverId,
+          serviceSpotId,
+          role: DriverRole.OWNER,
+        },
+      })
+      .then((count) => count > 0);
   }
 }

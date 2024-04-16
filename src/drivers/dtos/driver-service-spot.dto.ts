@@ -10,9 +10,4 @@ export class DriverServiceSpotDto {
     description: 'The name of the service spot',
   })
   name: string;
-
-  @ApiProperty({
-    description: 'The owner of the service spot',
-  })
-  serviceSpotOwnerId: string;
 }

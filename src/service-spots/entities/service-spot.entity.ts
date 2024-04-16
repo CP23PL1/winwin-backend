@@ -1,19 +1,16 @@
 import { SubDistrict } from 'src/addresses/entities/sub-district.entity';
+import { Driver } from 'src/drivers/entities/driver.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   Index,
-  JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
   Point,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { DriveRequest } from 'src/drive-requests/entities/drive-request.entity';
-import { Driver } from '../../drivers/entities/driver.entity';
 
 @Entity()
 export class ServiceSpot {
@@ -29,12 +26,12 @@ export class ServiceSpot {
   @Column({ nullable: true })
   addressLine2: string;
 
+  @Column()
+  subDistrictId: number;
+
   @ManyToOne(() => SubDistrict, (subDistrict) => subDistrict.serviceSpots)
   @Index()
   subDistrict: SubDistrict;
-
-  @Column()
-  subDistrictId: number;
 
   @Column({ type: 'geometry' })
   @Index({ spatial: true })
@@ -45,18 +42,8 @@ export class ServiceSpot {
   })
   approved: boolean;
 
-  @OneToOne(() => Driver)
-  @JoinColumn()
-  serviceSpotOwner: Driver;
-
-  @Column()
-  serviceSpotOwnerId: string;
-
   @OneToMany(() => Driver, (driver) => driver.serviceSpot)
   drivers: Driver[];
-
-  @OneToMany(() => DriveRequest, (driveRequest) => driveRequest.driver)
-  driveRequests: DriveRequest[];
 
   @CreateDateColumn()
   createdAt: Date;

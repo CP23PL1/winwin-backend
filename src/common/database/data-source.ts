@@ -1,5 +1,6 @@
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { config } from 'dotenv';
+import { AuditingSubscriber } from 'typeorm-auditing';
 
 config();
 
@@ -11,8 +12,8 @@ export const dataSourceOptions: DataSourceOptions = {
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   entities: ['dist/**/*.entity.js'],
-  subscribers: ['dist/**/*.subscriber.js'],
-  migrations: ['dist/db/migrations/*.js'],
+  subscribers: [AuditingSubscriber, 'dist/**/*.subscriber.js'],
+  migrations: ['dist/common/database/migrations/*.js'],
   migrationsRun: true,
   synchronize: false,
 };
