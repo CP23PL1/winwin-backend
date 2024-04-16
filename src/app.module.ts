@@ -25,6 +25,7 @@ import { ScheduleModule } from '@nestjs/schedule';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      ignoreEnvVars: false,
       validate: envValidation,
     }),
     FirebaseModule.forRootAsync({
