@@ -43,7 +43,6 @@ import { Auth0Roles } from 'src/authorization/decorators/auth0-roles.decorator';
 import { Role } from 'src/authorization/dto/user-info.dto';
 import { DriversService } from 'src/drivers/drivers.service';
 import { ServiceSpotException } from './constants/exceptions';
-import { plainToInstance } from 'class-transformer';
 import { DriverException } from 'src/drivers/constants/exceptions';
 
 @ApiTags('Service Spots')

@@ -44,6 +44,7 @@ export class ServiceSpotsService {
       let newServiceSpot = this.serviceSpotRepo.create(data);
       newServiceSpot = await queryRunner.manager.save(newServiceSpot, { reload: true });
 
+      driver.role = DriverRole.OWNER;
       driver.serviceSpot = newServiceSpot;
 
       await queryRunner.manager.save(driver);

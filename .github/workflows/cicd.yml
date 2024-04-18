@@ -65,7 +65,9 @@ jobs:
 
       - name: Setup Environment File
         run: |
+          rm -rf .env
           touch .env
+          echo "NODE_ENV=production" >> .env
           echo "API_VERSION=${{ steps.meta.outputs.version }}" >> .env
           echo "AUTH0_DOMAIN=${{ secrets.AUTH0_DOMAIN }}" >> .env
           echo "AUTH0_AUDIENCE=${{ secrets.AUTH0_AUDIENCE }}" >> .env
