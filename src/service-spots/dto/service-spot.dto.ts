@@ -3,6 +3,7 @@ import { Coordinate } from '../../shared/dtos/coordinate.dto';
 import { SubDistrict } from 'src/addresses/entities/sub-district.entity';
 import { DriverDto } from 'src/drivers/dtos/driver.dto';
 import { Expose } from 'class-transformer';
+import { Driver } from 'src/drivers/entities/driver.entity';
 
 export class ServiceSpotDto {
   private _addressLine1: string;
@@ -50,6 +51,11 @@ export class ServiceSpotDto {
     addressComponents.push(this._address.district.province.nameTH);
     return addressComponents.join(' ');
   }
+
+  @ApiProperty({
+    type: () => DriverDto,
+  })
+  serviceSpotOwner: DriverDto;
 
   @ApiProperty()
   priceRateImageUrl: string;

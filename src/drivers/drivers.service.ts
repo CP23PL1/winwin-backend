@@ -101,7 +101,7 @@ export class DriversService {
     return this.driverRepository.findOne({ where });
   }
 
-  async findOneWithInfo(id: Driver['id'], options: FindOneOptions<Driver> = {}) {
+  async findOneWithInfo(options: FindOneOptions<Driver> = {}) {
     const driver = await this.driverRepository.findOne({
       ...options,
       select: {
@@ -109,7 +109,6 @@ export class DriversService {
         id: true,
         phoneNumber: true,
       },
-      where: { id },
     });
 
     if (!driver) {

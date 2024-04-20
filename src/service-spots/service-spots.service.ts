@@ -13,6 +13,7 @@ import { ServiceSpotInviteDto } from './dto/service-spot-invite.dto';
 import { instanceToPlain } from 'class-transformer';
 import { MemoryStorageFile } from '@blazity/nest-file-fastify';
 import { DriverException } from 'src/drivers/constants/exceptions';
+import { DriverRole } from 'src/drivers/entities/driver.entity';
 
 @Injectable()
 export class ServiceSpotsService {
@@ -198,6 +199,12 @@ export class ServiceSpotsService {
     };
     serviceSpotDto.approved = serviceSpot.approved;
     serviceSpotDto.priceRateImageUrl = await this.getImageUrl(serviceSpot.id, 'priceRateImage');
+    serviceSpotDto.serviceSpotOwner = await this.driversService.findOneWithInfo({
+      where: {
+        serviceSpotId: serviceSpot.id,
+        role: DriverRole.OWNER,
+      },
+    });
 
     return instanceToPlain(serviceSpotDto, {
       excludePrefixes: ['_'],

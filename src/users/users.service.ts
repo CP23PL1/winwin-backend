@@ -55,7 +55,8 @@ export class UsersService {
       },
     });
 
-    const driver = await this.driversService.findOneWithInfo(driveRequest.driverId, {
+    const driver = await this.driversService.findOneWithInfo({
+      where: { id: driveRequest.driverId },
       loadEagerRelations: false,
     });
 

@@ -390,7 +390,9 @@ export class DriveRequestsGateway
           driveRequest.userId,
           UserIdentificationType.ID,
         );
-        const driver = await this.driversService.findOneWithInfo(driveRequest.driverId);
+        const driver = await this.driversService.findOneWithInfo({
+          where: { id: driveRequest.driverId },
+        });
         socket.emit('drive-request-created', {
           ...driveRequest,
           sid: currentDriveRequestSid,
