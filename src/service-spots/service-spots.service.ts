@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateServiceSpot, CreateServiceSpotFiles } from './dto/create-service-spot.dto';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { ServiceSpot } from './entities/service-spot.entity';
@@ -38,7 +38,11 @@ export class ServiceSpotsService {
       const driver = await this.driversService.findOneById(driverId);
 
       if (!driver) {
-        throw new Error('Driver not found');
+        throw new BadRequestException(DriverException.NotFound);
+      }
+
+      if (driver.serviceSpotId !== null) {
+        throw new BadRequestException(DriverException.DriverAlreadyInServiceSpot);
       }
 
       let newServiceSpot = this.serviceSpotRepo.create(data);

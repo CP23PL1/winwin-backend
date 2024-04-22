@@ -79,7 +79,6 @@ export class ServiceSpotsController {
       const newServiceSpot = await this.serviceSpotsService.create(req.user.user_id, data, files);
       return this.serviceSpotsService.mapToDto(newServiceSpot);
     } catch (error: any) {
-      console.error(error);
       switch (error.code) {
         case '23505':
           throw new ConflictException(ServiceSpotException.AlreadyExist(data.name));
