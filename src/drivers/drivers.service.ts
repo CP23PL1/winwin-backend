@@ -54,8 +54,9 @@ export class DriversService {
       .select('driver.id')
       .addSelect('driver.phoneNumber')
       .leftJoin('driver.serviceSpot', 'serviceSpot')
-      .where('serviceSpot.id = :serviceSpotId', {
+      .where('serviceSpot.id = :serviceSpotId AND role = :role', {
         serviceSpotId,
+        role: DriverRole.MEMBER,
       })
       .getMany();
 
@@ -80,14 +81,17 @@ export class DriversService {
   }
 
   async findDriverRatingsByDriverId(driverId: string) {
-    return this.driverRatingRepository
-      .createQueryBuilder('driverRating')
-      .select('CAST(driverRating.rating AS FLOAT)')
-      .addSelect('driverRating.category', 'category')
-      .addSelect('driverRating.totalFeedbacks', 'totalFeedbacks')
-      .where('driverRating.driverId = :driverId', { driverId })
-      .where({ driverId })
-      .getRawMany();
+    return this.driverRatingRepository.find({
+      where: { driverId },
+    });
+    // return this.driverRatingRepository
+    //   .createQueryBuilder('driverRating')
+    //   .select('CAST(driverRating.rating AS FLOAT)')
+    //   .addSelect('driverRating.category', 'category')
+    //   .addSelect('driverRating.totalFeedbacks', 'totalFeedbacks')
+    //   .where('driverRating.driverId = :driverId', { driverId })
+    //   .where({ driverId })
+    //   .getRawMany();
   }
 
   async findOneById(id: Driver['id'], options: FindOneOptions<Driver> = {}) {

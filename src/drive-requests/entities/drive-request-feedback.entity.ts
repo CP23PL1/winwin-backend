@@ -19,14 +19,14 @@ export class DriveRequestFeedback {
   @ManyToOne(() => DriveRequest, (driveRequest) => driveRequest.feedback, {
     onDelete: 'CASCADE',
   })
-  @Index()
   driveRequest: DriveRequest;
 
+  @Column()
+  @Index()
+  driveRequestId: DriveRequest['id'];
+
   @Column({
-    type: 'numeric',
     default: 5,
-    precision: 1,
-    scale: 0,
   })
   rating: number;
 

@@ -1,4 +1,4 @@
-import { IsArray, IsIn, IsNotEmpty, IsPositive, Max, Min } from 'class-validator';
+import { IsIn, IsNotEmpty, IsPositive, Max, Min } from 'class-validator';
 import { FeedbackCategory, feedbackCategoties } from '../entities/drive-request-feedback.entity';
 
 export class CreateDriveRequestFeedbackDto {
@@ -8,10 +8,7 @@ export class CreateDriveRequestFeedbackDto {
   @IsNotEmpty()
   rating: number;
 
-  @IsArray()
   @IsNotEmpty()
-  @IsIn(feedbackCategoties, {
-    each: true,
-  })
-  category: FeedbackCategory[];
+  @IsIn(feedbackCategoties)
+  category: FeedbackCategory;
 }

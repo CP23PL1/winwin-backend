@@ -89,6 +89,7 @@ export class DriversController {
       loadEagerRelations: false,
       select: {
         id: true,
+        role: true,
       },
       relations: {
         serviceSpot: true,

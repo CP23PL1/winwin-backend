@@ -133,7 +133,9 @@ export class DriveRequestsGateway
 
     const sid = nanoid();
     await this.redisDriveRequestStore.saveDriveRequest(sid, payload);
-    const driver = await this.driversService.findOneWithInfo(driverSocket.data.user.user_id);
+    const driver = await this.driversService.findOneWithInfo({
+      where: { id: driverSocket.data.user.user_id },
+    });
 
     this.server.to(driverSocket.data.user.user_id).emit('job-offer', {
       ...payload,
@@ -357,7 +359,11 @@ export class DriveRequestsGateway
       const driveRequest = await this.redisDriveRequestStore.findDriveRequest(
         currentDriveRequestSid,
       );
-      const driverWithInfo = await this.driversService.findOneWithInfo(socket.data.user.user_id);
+      const driverWithInfo = await this.driversService.findOneWithInfo({
+        where: {
+          id: socket.data.user.user_id,
+        },
+      });
       const user = await this.usersService.findOne(driveRequest.userId, UserIdentificationType.ID);
       if (driveRequest) {
         socket.emit('job-offer', {

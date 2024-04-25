@@ -5,7 +5,6 @@ import { DataSource, DeepPartial, FindOneOptions, Repository } from 'typeorm';
 import { PaginateQuery, paginate } from 'nestjs-paginate';
 import { CreateDriveRequestFeedbackDto } from './dto/create-drive-request-feedback.dto';
 import { DriveRequestFeedback } from './entities/drive-request-feedback.entity';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { DriverRating } from 'src/drivers/entities/driver-rating.entity';
 
 @Injectable()
@@ -62,15 +61,44 @@ export class DriveRequestsService {
     return this.driveRequestRepository.count({ where: { id } }).then((count) => count > 0);
   }
 
-  async createFeedback(id: string, data: CreateDriveRequestFeedbackDto) {
-    const mappedFeedback = data.category.map((category) => ({
-      driveRequest: {
-        id: id,
-      },
-      category,
-      rating: data.rating,
-    }));
-    await this.driveRequestFeedbackRepository.save(mappedFeedback);
+  async createFeedback(
+    driveRequest: DriveRequest,
+    createDriveRequestFeedbackDto: CreateDriveRequestFeedbackDto[],
+  ) {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+      const queryBuilder = queryRunner.connection.createQueryBuilder();
+      const newFeedbacks = createDriveRequestFeedbackDto.map((feedback) => ({
+        driveRequestId: driveRequest.id,
+        ...feedback,
+      }));
+      await queryBuilder.insert().into(DriveRequestFeedback).values(newFeedbacks).execute();
+
+      const driverRatingRepo = queryRunner.manager.getRepository(DriverRating);
+      const driverRatings = await driverRatingRepo.find({
+        where: { driverId: driveRequest.driverId },
+      });
+      const updatedDriverRatings = driverRatings.map((driverRating) => {
+        const feedback = createDriveRequestFeedbackDto.find(
+          (feedback) => feedback.category === driverRating.category,
+        );
+        if (feedback) {
+          driverRating.rating = driverRating.rating + feedback.rating;
+          driverRating.totalFeedbacks += 1;
+        }
+        return driverRating;
+      });
+      await driverRatingRepo.save(updatedDriverRatings);
+      await queryRunner.commitTransaction();
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
+    }
   }
 
   calculatePriceByDistanceMeters(distanceMeters: number) {
@@ -95,64 +123,64 @@ export class DriveRequestsService {
     return price;
   }
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
-  async computeFeedback() {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
+  // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  // async computeFeedback() {
+  //   const queryRunner = this.dataSource.createQueryRunner();
+  //   await queryRunner.connect();
+  //   await queryRunner.startTransaction();
 
-    this.logger.debug('Computing feedback ...');
+  //   this.logger.debug('Computing feedback ...');
 
-    try {
-      const queryBuilder = queryRunner.connection.createQueryBuilder();
-      const computedDriverRating = await queryBuilder
-        .from(DriveRequestFeedback, 'feedback')
-        .leftJoinAndSelect('feedback.driveRequest', 'driveRequest')
-        .select('driveRequest.driverId', 'driverId')
-        .addSelect('feedback.category', 'category')
-        .addSelect('CAST(COUNT(feedback.id) AS INT)', 'totalFeedbacks')
-        .addSelect(
-          'CAST((SUM(feedback.rating) / COUNT(feedback.id))::NUMERIC(3,2) AS FLOAT)',
-          'rating',
-        )
-        .groupBy('driveRequest.driverId, feedback.category')
-        .where("feedback.createdAt >= NOW() - INTERVAL '1' day")
-        .getRawMany<Pick<DriverRating, 'driverId' | 'category' | 'rating' | 'totalFeedbacks'>>();
-      console.log(computedDriverRating);
-      await queryBuilder
-        .insert()
-        .into(DriverRating)
-        .values(
-          computedDriverRating.map((driveRequest) => ({
-            driverId: driveRequest.driverId,
-            category: driveRequest.category,
-            rating: driveRequest.rating,
-          })),
-        )
-        .orIgnore()
-        .execute();
-      const promises = [];
-      for (const driverRating of computedDriverRating) {
-        const exe = queryBuilder
-          .update(DriverRating)
-          .where('driverId = :driverId AND category = :category', driverRating)
-          .set({
-            rating: () =>
-              `(rating + ${driverRating.rating}) / (totalFeedbacks + ${driverRating.totalFeedbacks})`,
-            totalFeedbacks: () => `totalFeedbacks + ${driverRating.totalFeedbacks}`,
-          })
-          .execute();
-        promises.push(exe);
-      }
-      await Promise.all(promises);
-      await queryRunner.commitTransaction();
-      this.logger.debug('Feedback computed');
-    } catch (error: any) {
-      await queryRunner.rollbackTransaction();
-      console.error(error);
-      this.logger.error('Failed to compute feedback, rolling back transaction');
-    } finally {
-      await queryRunner.release();
-    }
-  }
+  //   try {
+  //     const queryBuilder = queryRunner.connection.createQueryBuilder();
+  //     const computedDriverRating = await queryBuilder
+  //       .from(DriveRequestFeedback, 'feedback')
+  //       .leftJoinAndSelect('feedback.driveRequest', 'driveRequest')
+  //       .select('driveRequest.driverId', 'driverId')
+  //       .addSelect('feedback.category', 'category')
+  //       .addSelect('CAST(COUNT(feedback.id) AS INT)', 'totalFeedbacks')
+  //       .addSelect(
+  //         'CAST((SUM(feedback.rating) / COUNT(feedback.id))::NUMERIC(3,2) AS FLOAT)',
+  //         'rating',
+  //       )
+  //       .groupBy('driveRequest.driverId, feedback.category')
+  //       .where("feedback.createdAt >= NOW() - INTERVAL '1' day")
+  //       .getRawMany<Pick<DriverRating, 'driverId' | 'category' | 'rating' | 'totalFeedbacks'>>();
+  //     console.log(computedDriverRating);
+  //     await queryBuilder
+  //       .insert()
+  //       .into(DriverRating)
+  //       .values(
+  //         computedDriverRating.map((driveRequest) => ({
+  //           driverId: driveRequest.driverId,
+  //           category: driveRequest.category,
+  //           rating: driveRequest.rating,
+  //         })),
+  //       )
+  //       .orIgnore()
+  //       .execute();
+  //     const promises = [];
+  //     for (const driverRating of computedDriverRating) {
+  //       const exe = queryBuilder
+  //         .update(DriverRating)
+  //         .where('driverId = :driverId AND category = :category', driverRating)
+  //         .set({
+  //           rating: () =>
+  //             `(rating + ${driverRating.rating}) / (totalFeedbacks + ${driverRating.totalFeedbacks})`,
+  //           totalFeedbacks: () => `totalFeedbacks + ${driverRating.totalFeedbacks}`,
+  //         })
+  //         .execute();
+  //       promises.push(exe);
+  //     }
+  //     await Promise.all(promises);
+  //     await queryRunner.commitTransaction();
+  //     this.logger.debug('Feedback computed');
+  //   } catch (error: any) {
+  //     await queryRunner.rollbackTransaction();
+  //     console.error(error);
+  //     this.logger.error('Failed to compute feedback, rolling back transaction');
+  //   } finally {
+  //     await queryRunner.release();
+  //   }
+  // }
 }

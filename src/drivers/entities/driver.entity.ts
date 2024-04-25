@@ -33,13 +33,12 @@ export class Driver {
   role: DriverRole;
 
   @ManyToOne(() => ServiceSpot, (serviceSpot) => serviceSpot.drivers, {
-    nullable: true,
     onDelete: 'SET NULL',
   })
   @Index()
   serviceSpot: ServiceSpot;
 
-  @Column()
+  @Column({ nullable: true })
   serviceSpotId: ServiceSpot['id'];
 
   @OneToMany(() => DriveRequest, (driveRequest) => driveRequest.driver)

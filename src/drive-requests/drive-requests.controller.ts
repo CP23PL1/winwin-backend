@@ -50,21 +50,21 @@ export class DriveRequestsController {
   }
 
   @Post(':id/feedback')
-  async feedback(@Param('id') id: string, @Body() data: CreateDriveRequestFeedbackDto) {
-    const driveRequestExists = await this.driveRequestsService.exists(id);
+  async feedback(@Param('id') id: string, @Body() data: CreateDriveRequestFeedbackDto[]) {
+    const driveRequest = await this.driveRequestsService.findOne(id);
 
-    if (!driveRequestExists) {
+    if (!driveRequest) {
       throw new NotFoundException({
         code: 'drive_request_not_found',
         message: 'Drive request not found',
       });
     }
 
-    return this.driveRequestsService.createFeedback(id, data);
+    return this.driveRequestsService.createFeedback(driveRequest, data);
   }
 
-  @Post('__test__/compute-feedback')
-  async computeFeedback() {
-    return this.driveRequestsService.computeFeedback();
-  }
+  // @Post('__test__/compute-feedback')
+  // async computeFeedback() {
+  //   return this.driveRequestsService.computeFeedback();
+  // }
 }

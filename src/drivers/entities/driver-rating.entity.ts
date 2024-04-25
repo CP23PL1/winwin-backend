@@ -27,10 +27,7 @@ export class DriverRating {
   driver: Driver;
 
   @Column({
-    type: 'numeric',
     default: 5,
-    precision: 3,
-    scale: 2,
   })
   rating: number;
 
