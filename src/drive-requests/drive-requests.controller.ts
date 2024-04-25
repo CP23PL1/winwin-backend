@@ -7,13 +7,13 @@ import {
   Param,
   Post,
 } from '@nestjs/common';
-import { GoogleApiService } from 'src/externals/google-api/google-api.service';
 import { DriveRequestsService } from './drive-requests.service';
 import { ConfigService } from '@nestjs/config';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CreateDriveRequestPreviewDto } from './dto/create-drive-request-preview.dto';
 import { DriveRequestPreviewDto } from './dto/drive-request-preview.dto';
 import { CreateDriveRequestFeedbackDto } from './dto/create-drive-request-feedback.dto';
+import { GoogleMapsService } from 'src/externals/google-maps/google-maps.service';
 
 @ApiTags('Drive Requests')
 @ApiBearerAuth()
@@ -22,7 +22,7 @@ export class DriveRequestsController {
   private DRIVE_SERVICE_CHARGE: number;
   constructor(
     private readonly configService: ConfigService,
-    private readonly googleApiService: GoogleApiService,
+    private readonly googleMapsService: GoogleMapsService,
     private readonly driveRequestsService: DriveRequestsService,
   ) {
     this.DRIVE_SERVICE_CHARGE = parseInt(this.configService.get('DRIVE_SERVICE_CHARGE'), 10);
@@ -31,7 +31,7 @@ export class DriveRequestsController {
   @HttpCode(HttpStatus.CREATED)
   @Post('preview')
   async previewRoutes(@Body() body: CreateDriveRequestPreviewDto): Promise<DriveRequestPreviewDto> {
-    const { routes } = await this.googleApiService.getRoutes(body.origin, body.destination);
+    const { routes } = await this.googleMapsService.computeRoutes(body.origin, body.destination);
     const route = routes[0];
 
     const priceByDistance = this.driveRequestsService.calculatePriceByDistanceMeters(
@@ -62,9 +62,4 @@ export class DriveRequestsController {
 
     return this.driveRequestsService.createFeedback(driveRequest, data);
   }
-
-  // @Post('__test__/compute-feedback')
-  // async computeFeedback() {
-  //   return this.driveRequestsService.computeFeedback();
-  // }
 }

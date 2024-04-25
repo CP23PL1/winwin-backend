@@ -32,10 +32,11 @@ import {
 } from './stores/dto/drive-request-session.dto';
 import { DriveRequestsService } from './drive-requests.service';
 import { DriveRequestStatus } from './entities/drive-request.entity';
-import { GoogleApiService } from 'src/externals/google-api/google-api.service';
 import { InjectRedis } from '@nestjs-modules/ioredis';
 import Redis from 'ioredis';
 import { Driver } from 'src/drivers/entities/driver.entity';
+import { AddressType, Language, ReverseGeocodeRequest } from '@googlemaps/google-maps-services-js';
+import { GoogleMapsService } from 'src/externals/google-maps/google-maps.service';
 
 @UseFilters(new BaseWsExceptionFilter())
 @WebSocketGateway({
@@ -55,7 +56,7 @@ export class DriveRequestsGateway
     private readonly usersService: UsersService,
     private readonly redisDriveRequestStore: RedisDriveRequestStore,
     private readonly driveRequestsService: DriveRequestsService,
-    private readonly googleApiService: GoogleApiService,
+    private readonly googleMapsService: GoogleMapsService,
     @InjectRedis()
     private readonly redis: Redis,
   ) {}
@@ -107,9 +108,35 @@ export class DriveRequestsGateway
 
     const driverSocket = await this.findDriverSocketToOfferJob(user.id, origin);
 
+    const reverseGeocodeParams: ReverseGeocodeRequest['params'] = {
+      language: Language.th,
+      result_type: [AddressType.street_address, AddressType.route],
+      key: this.googleMapsService.placesApiKey,
+    };
+
     const [originDetail, destinationDetail] = await Promise.all([
-      this.googleApiService.getReverseGeocode(origin),
-      this.googleApiService.getReverseGeocode(destination),
+      this.googleMapsService
+        .reverseGeocode({
+          params: {
+            ...reverseGeocodeParams,
+            latlng: {
+              lat: origin.lat,
+              lng: origin.lng,
+            },
+          },
+        })
+        .then((res) => res.data.results[0]),
+      this.googleMapsService
+        .reverseGeocode({
+          params: {
+            ...reverseGeocodeParams,
+            latlng: {
+              lat: destination.lat,
+              lng: destination.lng,
+            },
+          },
+        })
+        .then((res) => res.data.results[0]),
     ]);
     const customId = customAlphabet('1234567890', 6);
     const id = `DR-${moment().format('YYMMDD')}-${customId()}`;

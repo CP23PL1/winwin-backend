@@ -18,8 +18,8 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { redisStore } from 'cache-manager-ioredis-yet';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { Auth0RolesGuard } from './authorization/providers/auth0/auth0-roles.guard';
-import { GoogleApiModule } from './externals/google-api/google-api.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { GoogleMapsModule } from './externals/google-maps/google-maps.module';
 
 @Module({
   imports: [
@@ -57,13 +57,13 @@ import { ScheduleModule } from '@nestjs/schedule';
     ScheduleModule.forRoot(),
     TypeOrmModule.forRoot(dataSourceOptions),
     DriversModule,
-    GoogleApiModule,
     DriversMockupApiModule,
     ServiceSpotsModule,
     DriveRequestsModule,
     AddressesModule,
     AuthorizationModule,
     UsersModule,
+    GoogleMapsModule,
   ],
   providers: [
     {
