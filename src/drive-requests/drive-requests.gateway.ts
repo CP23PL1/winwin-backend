@@ -213,14 +213,16 @@ export class DriveRequestsGateway
     @MessageBody() data: DriveRequestSession,
   ) {
     // Cooldown driver for 1 minutes before they can get another job offer
-    driverSocket.data.cooldown = moment().add(1, 'minutes').toISOString();
+    if (this.configService.get('NODE_ENV') === 'production') {
+      driverSocket.data.cooldown = moment().add(1, 'minutes').toISOString();
+    }
 
     try {
       const newDriverSocket = await this.findDriverSocketToOfferJob(
         data.userId,
         data.origin.location,
       );
-      this.server.to(newDriverSocket.id).emit('job-offer', data);
+      this.server.to(newDriverSocket.data.user.user_id).emit('job-offer', data);
     } catch (error: unknown) {
       this.redisDriveRequestStore.removeDriveRequest(data.sid);
       this.server.to(data.userId).emit('drive-request-rejected', data);
