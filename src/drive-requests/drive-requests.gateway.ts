@@ -320,7 +320,7 @@ export class DriveRequestsGateway
     );
 
     if (nearbyServiceSpots.length <= 0) {
-      throw new WsException('No nearby service spots found');
+      throw new WsException('NO_NEARBY_SERVICE_SPOT');
     }
 
     let driverSocket: RemoteSocket<any, any> | null = null;
@@ -352,7 +352,7 @@ export class DriveRequestsGateway
 
     if (!driverSocket) {
       this.logger.error('No driver available at the moment');
-      throw new WsException('No drive available at the moment. Please try again later.');
+      throw new WsException('NO_DRIVER_AVAILABLE');
     }
 
     return driverSocket;
