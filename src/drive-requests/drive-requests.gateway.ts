@@ -222,7 +222,13 @@ export class DriveRequestsGateway
         data.userId,
         data.origin.location,
       );
-      this.server.to(newDriverSocket.data.user.user_id).emit('job-offer', data);
+      const driver = await this.driversService.findOneWithInfo({
+        where: { id: newDriverSocket.data.user.user_id },
+      });
+      this.server.to(newDriverSocket.data.user.user_id).emit('job-offer', {
+        ...data,
+        driver,
+      });
     } catch (error: unknown) {
       this.redisDriveRequestStore.removeDriveRequest(data.sid);
       this.server.to(data.userId).emit('drive-request-rejected', data);
