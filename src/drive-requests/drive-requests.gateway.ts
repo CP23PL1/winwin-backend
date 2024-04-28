@@ -162,6 +162,7 @@ export class DriveRequestsGateway
     await this.redisDriveRequestStore.saveDriveRequest(sid, payload);
     const driver = await this.driversService.findOneWithInfo({
       where: { id: driverSocket.data.user.user_id },
+      relations: { serviceSpot: true },
     });
 
     this.server.to(driverSocket.data.user.user_id).emit('job-offer', {
@@ -196,8 +197,8 @@ export class DriveRequestsGateway
       driverId: driverSocket.data.user.user_id,
     };
     await this.redisDriveRequestStore.saveDriveRequest(data.sid, payload);
-    this.redis.set(`drivers:${driverSocket.data.user.user_id}:drive-request-session`, data.sid);
-    this.redis.set(`users:${data.userId}:drive-request-session`, data.sid);
+    this.redis.set(`${driverSocket.data.user.user_id}:drive-request-session`, data.sid);
+    this.redis.set(`${data.userId}:drive-request-session`, data.sid);
     this.server
       .to(data.userId)
       .to(driverSocket.data.user.user_id)
@@ -267,8 +268,8 @@ export class DriveRequestsGateway
         paidAmount: driveRequest.total,
         status: DriveRequestStatus.COMPLETED,
       });
-      this.redis.del(`drivers:${driveRequest.driverId}:drive-request-session`);
-      this.redis.del(`users:${driveRequest.userId}:drive-request-session`);
+      this.redis.del(`${driveRequest.driverId}:drive-request-session`);
+      this.redis.del(`${driveRequest.userId}:drive-request-session`);
       this.server.to(driveRequest.userId).to(driveRequest.driverId).emit('drive-request-completed');
       return;
     } else {
@@ -279,6 +280,28 @@ export class DriveRequestsGateway
       .to(driveRequest.userId)
       .to(driveRequest.driverId)
       .emit('drive-request-updated', payload);
+  }
+
+  @SubscribeMessage('get-drive-request')
+  async getDriveRequest(@ConnectedSocket() socket: Socket) {
+    const currentDriveRequestSid = await this.redis.get(
+      `${socket.data.user.user_id}:drive-request-session`,
+    );
+    if (!currentDriveRequestSid) {
+      return null;
+    }
+    const driveRequest = await this.redisDriveRequestStore.findDriveRequest(currentDriveRequestSid);
+    const user = await this.usersService.findOne(driveRequest.userId, UserIdentificationType.ID);
+    const driver = await this.driversService.findOneWithInfo({
+      where: { id: driveRequest.driverId },
+      relations: { serviceSpot: true },
+    });
+    return {
+      ...driveRequest,
+      sid: currentDriveRequestSid,
+      user,
+      driver,
+    };
   }
 
   @SubscribeMessage('get-chat-messages')
@@ -386,29 +409,6 @@ export class DriveRequestsGateway
     const serviceSpotRoom = this.getServiceSpotRoom(driver.serviceSpot.id);
     socket.join(serviceSpotRoom);
 
-    const currentDriveRequestSid = await this.redis.get(
-      `drivers:${socket.data.user.user_id}:drive-request-session`,
-    );
-
-    if (currentDriveRequestSid) {
-      const driveRequest = await this.redisDriveRequestStore.findDriveRequest(
-        currentDriveRequestSid,
-      );
-      const driverWithInfo = await this.driversService.findOneWithInfo({
-        where: {
-          id: socket.data.user.user_id,
-        },
-      });
-      const user = await this.usersService.findOne(driveRequest.userId, UserIdentificationType.ID);
-      if (driveRequest) {
-        socket.emit('job-offer', {
-          ...driveRequest,
-          sid: currentDriveRequestSid,
-          user,
-          driver: driverWithInfo,
-        });
-      }
-    }
     socket.data.online = false;
     socket.emit('sync-driver-status', socket.data.online);
     this.logger.debug(
@@ -418,30 +418,6 @@ export class DriveRequestsGateway
 
   private async handlePassengerConnection(socket: Socket) {
     this.logger.debug(`Passenger connected: ${socket.data.user.user_id}`);
-
-    const currentDriveRequestSid = await this.redis.get(
-      `users:${socket.data.user.user_id}:drive-request-session`,
-    );
-    if (currentDriveRequestSid) {
-      const driveRequest = await this.redisDriveRequestStore.findDriveRequest(
-        currentDriveRequestSid,
-      );
-      if (driveRequest) {
-        const user = await this.usersService.findOne(
-          driveRequest.userId,
-          UserIdentificationType.ID,
-        );
-        const driver = await this.driversService.findOneWithInfo({
-          where: { id: driveRequest.driverId },
-        });
-        socket.emit('drive-request-created', {
-          ...driveRequest,
-          sid: currentDriveRequestSid,
-          user,
-          driver,
-        });
-      }
-    }
   }
 
   private rejectUnauthorizedClient(socket: Socket, reason: string) {
