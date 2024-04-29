@@ -10,28 +10,30 @@ export class Auth0RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    // const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [
+    //   context.getHandler(),
+    //   context.getClass(),
+    // ]);
 
-    if (isPublic) return true;
+    return true;
 
-    const requiredRoles = this.reflector.getAllAndOverride<Role[]>(AUTH0_ROLES_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    if (!requiredRoles) {
-      return true;
-    }
-    const request = context.switchToHttp().getRequest<FastifyRequest>();
-    const user = request.user;
+    // if (isPublic) return true;
 
-    if (!user) {
-      return false;
-    }
+    // const requiredRoles = this.reflector.getAllAndOverride<Role[]>(AUTH0_ROLES_KEY, [
+    //   context.getHandler(),
+    //   context.getClass(),
+    // ]);
+    // if (!requiredRoles) {
+    //   return true;
+    // }
+    // const request = context.switchToHttp().getRequest<FastifyRequest>();
+    // const user = request.user;
 
-    return this.matchRoles(requiredRoles, user['cp23pl1/roles']);
+    // if (!user) {
+    //   return false;
+    // }
+
+    // return this.matchRoles(requiredRoles, user['cp23pl1/roles']);
   }
 
   private matchRoles(roles: string[], userRoles: string[]): boolean {
